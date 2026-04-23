@@ -1,7 +1,7 @@
 library(openxlsx)
 #### HEATMAP ###
 #no longer excluding
-og_annotation = read.xlsx("master_table_with_new_scores_and_classifications_and_clinvar_82625.xlsx")
+og_annotation = read.xlsx("master_table_with_new_scores_and_classifications_and_clinvar_42226.xlsx")
 og_annotation$clinical_numbering = og_annotation$`cDNA.#`-38
 wild_types = og_annotation[which(og_annotation$Mutation.type=="WT_"),]
 wild_types$orig_base = toupper(sapply(strsplit(wild_types$base, " "), "[", 2))
@@ -35,6 +35,11 @@ wild_type_labels$Base[which(wild_type_labels$DNA_Position==645)] = "G^"
 wild_type_labels$Base[which(wild_type_labels$DNA_Position==741)] = "G^"
 # Adjust y-position to place text above the heatmap
 wild_type_labels_part1 = wild_type_labels[which(wild_type_labels$DNA_Position<=679),]
+
+#library(showtext)
+#font_add_google("Arial") # Arimo is a metrically compatible alternative
+#showtext_auto()
+
 ggplot(heatmap_df_part1, aes(x = DNA_Position, y = Base, fill = Score)) +
   geom_tile(aes(colour = as.factor(Border)), linewidth = 0.5) +
   geom_text(aes(label = AminoAcid,fontface=Text), colour=heatmap_df_part1$Color,size = 25/.pt) +
@@ -71,8 +76,8 @@ ggplot(heatmap_df_part1, aes(x = DNA_Position, y = Base, fill = Score)) +
 
 #ggsave("heatmap_bigger_font.pdf",device = "pdf",width=32,height=7)
 #ggsave("heatmap_all_variants_top_12226.eps",device = "eps",width=30,height=5)
-ggsave("heatmap_all_variants_top_41326.pdf",device = "pdf",width=32,height=7)
-ggsave("heatmap_all_variants_top_41326.eps",device = "eps",width=32,height=7)
+ggsave("heatmap_all_variants_top_42226.pdf",device = "pdf",width=32,height=7)
+ggsave("heatmap_all_variants_top_42226.eps",device = "eps",width=32,height=7)
 
 
 heatmap_df_part2 = heatmap_df[which(heatmap_df$DNA_Position>679),]
@@ -117,8 +122,8 @@ ggplot(heatmap_df_part2, aes(x = DNA_Position, y = Base, fill = Score)) +
 
 #ggsave("heatmap_all_variants_bottom_12226.pdf",device = "pdf",width=30,height=5)
 #ggsave("heatmap_all_variants_bottom_12226.eps",device = "eps",width=30,height=5)
-ggsave("heatmap_all_variants_bottom_41326.pdf",device = "pdf",width=32,height=7)
-ggsave("heatmap_all_variants_bottom_41326.eps",device = "eps",width=32,height=7)
+ggsave("heatmap_all_variants_bottom_42226.pdf",device = "pdf",width=32,height=7)
+ggsave("heatmap_all_variants_bottom_42226.eps",device = "eps",width=32,height=7)
 
 
 
