@@ -1,0 +1,1202 @@
+---
+title: "X_SCID_Figs3"
+output: html_document
+date: "2024-09-23"
+---
+
+```{r setup, include=FALSE}
+#analysis with averaged donor data and median averaged normalization 
+library(dplyr)
+library(readr)
+library(readxl)
+library(ggplot2)
+library(broom)
+install.packages(("writexl"))
+library("writexl")
+install.packages("googlesheets4")
+library(googlesheets4)
+library(tidyr)
+install.packages("zoo")
+library(zoo)
+library(grid) 
+library(gridExtra)
+install.packages("patchwork")
+library(patchwork)
+install.packages('mixtools')
+library(mixtools)
+install.packages("devtools")
+devtools::install_github("choisy/cutoff")
+library("cutoff")
+install.packages("bbmle")
+library("bbmle")
+library("cowplot")
+#' Plot a Mixture Component
+#' 
+#' @param x Input data
+#' @param mu Mean of component
+#' @param sigma Standard deviation of component
+#' @param lam Mixture weight of component
+plot_mix_comps <- function(x, mu, sigma, lam) {
+  lam * dnorm(x, mu, sigma)
+}
+#_____________________________________________________________________
+#Paired Data set (9/12/24)
+median_paired_gdna_3day_new_annos_91224_1_ <- read_csv("~/Downloads/untitled folder 2/d1_d2_day3_loess_then_scale.csv")
+#%>%drop_na(`WTaa`)
+#Mutcode<- paste(annotated_3m_1Libp$`WTaa`, annotated_3m_1Libp$`pro..`, annotated_3m_1Libp$mutaminoacid,sep = "")
+#annotated_3m_1Libp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 1 RNA 3 DAY
+annotated_3m_1Libp<-read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_3m_1Libp_S34_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_3m_1Libp$`WTaa`, annotated_3m_1Libp$`pro..`, annotated_3m_1Libp$mutaminoacid, "|", annotated_3m_1Libp$`mutcodon`,sep = "")
+annotated_3m_1Libp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 1 gDNA 3 Day
+annotated_5g_1Libp <- read_csv("~/Downloads/diff_exp_results_annotated_lib 2/annotated_5g_1Libp_S7_L001_VS_LibTemplate_S2_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_5g_1Libp$`WTaa`, annotated_5g_1Libp$`pro..`, annotated_5g_1Libp$mutaminoacid, "|", annotated_5g_1Libp$`mutcodon`, sep = "")
+annotated_5g_1Libp$Mutcode <- Mutcode
+
+
+
+#for ClinVar Column
+Master_table<-read_csv("~/Downloads/R_studio/master_table_with_new_scores.csv")
+# Ensure both data frames have a common column name for joining
+common_column_name <- "Mutcode"
+
+# Rename columns to ensure consistency, if necessary
+names(annotated_5g_1Libp)[names(annotated_5g_1Libp) == common_column_name] <- "common_column"
+names(Master_table)[names(Master_table) == common_column_name] <- "common_column"
+
+# Perform a left join to merge the `ClinVar` column without creating NAs
+annotated_5g_1Libp <- annotated_5g_1Libp %>%
+  left_join(Master_table %>% select(common_column, ClinVar), by = "common_column")
+annotated_5g_1Libp <- annotated_5g_1Libp %>%
+  left_join(Master_table %>% select(common_column, Mutcode2), by = "common_column")
+
+#______________________________________________________________________
+#Donor 2 mRNA 3 Day
+annotated_11m_2Libp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_11m_2Libp_S42_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_11m_2Libp $`WTaa`, annotated_11m_2Libp $`pro..`, annotated_11m_2Libp $mutaminoacid,"|", annotated_11m_2Libp$`mutcodon`,sep = "")
+annotated_11m_2Libp $Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 2 gDNA 3Day
+annotated_13g_2Libp <- read_csv("~/Downloads/diff_exp_results_annotated_lib 2/annotated_13g_2Libp_S15_L001_VS_LibTemplate_S2_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_13g_2Libp$`WTaa`, annotated_13g_2Libp $`pro..`, annotated_13g_2Libp $mutaminoacid,"|", annotated_13g_2Libp$`mutcodon`,sep = "")
+annotated_13g_2Libp$Mutcode <- Mutcode
+#______________________________________________________________________
+
+
+#creating a combined column
+data_5g_13g_combined1 <- data.frame(
+  LogFC_5g = annotated_5g_1Libp$fold_change,
+  LogFC_13g = annotated_13g_2Libp$fold_change
+)
+
+# Calculate additional columns
+data_5g_13g_combined1<- data_5g_13g_combined1 %>%
+  mutate(
+    avgFC = (LogFC_5g + LogFC_13g) / 2,
+    varFC = (LogFC_5g - avgFC)^2,
+    sdFC = sqrt(varFC),
+    `cDNA..` = annotated_5g_1Libp$`cDNA..`,
+    `pro..` = annotated_5g_1Libp$`pro..`,
+    Mutation.type = annotated_5g_1Libp$Mutation.type,
+    ClinVar = annotated_5g_1Libp$ClinVar.y, 
+    Mutcode = annotated_5g_1Libp$Mutcode,
+    Mutcode2 = annotated_5g_1Libp$Mutcode2, 
+    ClinVar = coalesce(ClinVar, "Unclassified"))
+#exclude variants HERE _______________
+#values_to_exclude <- c("G215G|GGT",
+#"G215G|GGG",
+#"G215G|GGC",
+#"G247G|GGT",
+#"G247G|GGG",
+#"G247G|GGC",
+#"D214E|GAG",
+#"Q216E|GAG",
+#"W246R|AGG",
+#"W246G|GGG",
+#"W246R|CGG",
+#"W246*|TAG",
+#"W246L|TTG",
+#"W246S|TCG",
+#"G247V|GTA",
+#"G247A|GCA",
+#"S248G|GGC")
+#values_to_exclude <- unique(values_to_exclude)
+data_5g_13g_combined <- data_5g_13g_combined1 #%>% filter(!Mutcode %in% values_to_exclude)
+  ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = avgFC)) +
+  geom_point(aes(color = ClinVar)) +  # LOESS fit
+  labs(title = "       3 Day Donor Averaged (with conservation)", x = "gDNA position", y = "LogFC",color = "Mutation Type") +  scale_color_manual(values = c(
+  "Benign" = "#00ff00", 
+  "Likely Benign" = "lightgreen", 
+  "VUS" = "pink", 
+  "Likely Pathogenic" = "#de8bf9",  # A lighter red for Likely Pathogenic
+  "X-SCID" = "#f94040", 
+ "X-SCID HMGD" = "darkred",  
+ "Unclassified" = "darkgrey") ) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    aspect.ratio = .75, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+  )+
+  scale_size_continuous(name = "Exon Conservation Score", range = c(1, 6)) 
+caption_grob_avg <- textGrob("LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.45, "npc"), 
+                         just = "center", gp = gpar(fontsize = 10))
+data_5g_13g_combined_exclude_only<- data_5g_13g_combined1 #%>% filter(Mutcode %in% values_to_exclude)
+
+ggplot(data_5g_13g_combined_exclude_only, aes(x = `cDNA..`, y = avgFC)) +
+  geom_point(aes(color = ClinVar)) +  # LOESS fit
+  labs(title = "       3 Day Donor Averaged (with conservation)", x = "gDNA position", y = "LogFC",color = "Mutation Type") +  scale_color_manual(values = c(
+  "Benign" = "#00ff00", 
+  "Likely Benign" = "lightgreen", 
+  "VUS" = "pink", 
+  "Likely Pathogenic" = "#de8bf9",  # A lighter red for Likely Pathogenic
+  "X-SCID" = "#f94040", 
+ "X-SCID HMGD" = "darkred",  
+ "Unclassified" = "darkgrey") ) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    aspect.ratio = .75, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+  )+
+  scale_size_continuous(name = "Exon Conservation Score", range = c(1, 6)) 
+caption_grob_avg <- textGrob("LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.45, "npc"), 
+                         just = "center", gp = gpar(fontsize = 10))
+#median_paired_gdna_3day_new_annos_91224_1_$ScaledFoldChange_d1,
+
+#____________________________________________________________________________________
+
+#Normalization attempt
+#goal is to obtain a smooth curve
+
+#filtered combined data set according to minimum synonymous LogFC and Standard Deviation###
+####################LOESS curve with smoother fit ###########################
+data_5g_Loess <- data_5g_13g_combined%>%filter(LogFC_5g >=	
+-1.808111)
+loess_15_5g <- loess(LogFC_5g ~ `cDNA..`, data = data_5g_Loess, span = 0.15)
+data_5g_Loess$smoothed15 <- predict(loess_15_5g) 
+y_limits <- range(c(data_5g_13g_combined$LogFC_5g, data_5g_13g_combined$LogFC_13g))
+
+#plotting model to observe fit 
+p_5g<-ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = LogFC_5g)) +
+  geom_point(aes(color = Mutation.type), size=2.2) + geom_line(data = data_5g_Loess, aes(x = `cDNA..`, y = smoothed15 ), color = "red", size =1.5)+  # LOESS fit
+  labs(title = "       3 Day Donor 1 LOESS", x = "                                                                 gDNA position", y = "LogFC",color = "Mutation Type") +  scale_color_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d")) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), 
+    aspect.ratio = .9, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+  )+
+  ylim(y_limits)
+caption_grob <- textGrob("LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.5, "npc"), 
+                         just = "center", gp = gpar(fontsize = 10))
+
+# Arrange the plot and caption side by side
+combined_plot_5g <- grid.arrange(
+  p_5g, 
+  arrangeGrob(caption_grob, nrow = 2),  # Create a layout with the caption above the legend
+  ncol = 2, 
+  widths = c(3, 1),  # Adjust the relative widths of the plot and the caption
+  heights = c(1, 0.1)  # Adjust the relative heights of the plot and the caption
+)
+
+#########LOESSfit for 13g (Donor2)
+# Calculate minimum LogFC_13g for Synonymous ("Syn") variants
+syn_min_13g <- min(data_5g_13g_combined$LogFC_13g[data_5g_13g_combined$Mutation.type == "Syn"], na.rm = TRUE)
+
+# Filter for LogFC_13g above or equal to Syn minimum
+data_13g_Loess <- data_5g_13g_combined %>%
+  filter(LogFC_13g >= syn_min_13g)
+loess_15_13g <- loess(LogFC_13g ~ `cDNA..`, data = data_13g_Loess, span = 0.15)
+data_13g_Loess$smoothed15 <- predict(loess_15_13g) 
+
+#plotting model to observe fit 
+p_13g<-ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = LogFC_13g)) +
+  geom_point(aes(color = Mutation.type), size=2.2) + geom_line(data = data_13g_Loess, aes(x = `cDNA..`, y = smoothed15 ), color = "red", size =1.5)+  # LOESS fit
+  labs(title = "       3 Day Donor 2 LOESS", x = "", y = "",color = "Mutation Type") +  scale_color_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d")) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    aspect.ratio = .9, plot.title = element_text(hjust = 0.5)
+  )+
+  ylim(y_limits)
+caption_grob <- textGrob("LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.5, "npc"), 
+                         just = "center", gp = gpar(fontsize = 10))
+
+# Arrange the plot and caption side by side
+combined_plot_13g <- grid.arrange(
+  p_13g, 
+  arrangeGrob(caption_grob, nrow = 2),  # Create a layout with the caption above the legend
+  ncol = 2, 
+  widths = c(3, 1),  # Adjust the relative widths of the plot and the caption
+  heights = c(1, 0.1)  # Adjust the relative heights of the plot and the caption
+)
+
+
+# Combine both plots with a single legend
+combined_plot_5g_13g <- (p_5g + p_13g)+ labs(caption = "LOESS span = 0.15") + 
+  theme(
+    plot.caption = element_text(hjust = -.7), (vjust = -5),  # Center align the caption
+    plot.caption.position = "panel"  # Position the caption at the bottom
+  )+ plot_layout(guides = "collect") & theme(legend.position = 'right')
+combined_plot_5g_13g
+
+
+
+
+
+
+
+####################LOESS adj data avged ###########################
+#adding LOESS predictions to data set 
+loess_predictions_5g <- data.frame(predict(loess_15_5g , newdata = data.frame(`cDNA..` = 633:794)))
+loess_predictions_5g <- loess_predictions_5g%>%rename(LOESS_5g = `predict.loess_15_5g..newdata...data.frame.cDNA.....633.794..`)%>%mutate(`cDNA..` = 633:794)
+
+loess_predictions_13g <- data.frame(predict(loess_15_13g , newdata = data.frame(`cDNA..` = 633:794)))
+loess_predictions_13g <- loess_predictions_13g%>%rename(LOESS_13g = `predict.loess_15_13g..newdata...data.frame.cDNA.....633.794..`)%>%mutate(`cDNA..` = 633:794)
+
+
+
+
+###Median Donor adjusted values intered into table here POST LOESS ADJUSTMENT##########
+# 1. Merge LOESS predictions (keep as before)
+data_5g_13g_combined <- left_join(data_5g_13g_combined, loess_predictions_5g , by = "cDNA..")
+data_5g_13g_combined <- left_join(data_5g_13g_combined, loess_predictions_13g , by = "cDNA..")
+
+# 2. Calculate LOESS-adjusted values for each donor
+data_5g_13g_combined <- data_5g_13g_combined %>%
+  mutate(
+    adjusted_5g = LogFC_5g - LOESS_5g,
+    adjusted_13g = LogFC_13g - LOESS_13g
+  )
+
+# 3. Compute scaling values using only current dataset
+shared_variants_syn <- data_5g_13g_combined %>% filter(Mutation.type == "Syn")
+shared_variants_non <- data_5g_13g_combined %>% filter(Mutation.type == "Non")
+
+syn_scale_value <- mean(c(median(shared_variants_syn$adjusted_5g, na.rm = TRUE), median(shared_variants_syn$adjusted_13g, na.rm = TRUE)))
+non_scale_value <- mean(c(median(shared_variants_non$adjusted_5g, na.rm = TRUE), median(shared_variants_non$adjusted_13g, na.rm = TRUE)))
+
+syn_median_5g <- median(data_5g_13g_combined$adjusted_5g[data_5g_13g_combined$Mutation.type == "Syn"], na.rm = TRUE)
+syn_median_13g <- median(data_5g_13g_combined$adjusted_13g[data_5g_13g_combined$Mutation.type == "Syn"], na.rm = TRUE)
+non_median_5g <- median(data_5g_13g_combined$adjusted_5g[data_5g_13g_combined$Mutation.type == "Non"], na.rm = TRUE)
+non_median_13g <- median(data_5g_13g_combined$adjusted_13g[data_5g_13g_combined$Mutation.type == "Non"], na.rm = TRUE)
+
+scale_factor_5g <- (non_scale_value - syn_scale_value) / (non_median_5g - syn_median_5g)
+shift_factor_5g <- syn_scale_value - scale_factor_5g * syn_median_5g
+
+scale_factor_13g <- (non_scale_value - syn_scale_value) / (non_median_13g - syn_median_13g)
+shift_factor_13g <- syn_scale_value - scale_factor_13g * syn_median_13g
+
+# 4. Apply the transformation
+data_5g_13g_combined <- data_5g_13g_combined %>%
+  mutate(
+    logFC_5g_adj = adjusted_5g * scale_factor_5g + shift_factor_5g,
+    logFC_13g_adj = adjusted_13g * scale_factor_13g + shift_factor_13g,
+    logFC_adj_avg = (logFC_5g_adj + logFC_13g_adj) / 2
+  )
+
+
+
+####avg Post LOESS adjusted data combining both donors#######
+
+data_Loess <- data_5g_13g_combined%>%filter(logFC_adj_avg >=	
+-2.563705401)
+
+loess_15_avg <- loess(logFC_adj_avg ~ `cDNA..`, data = data_Loess, span = 0.15)
+data_Loess$smoothed15_avg<- predict(loess_15_avg)
+
+p_post_LOESS<-ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = logFC_adj_avg)) +
+  geom_point(aes(color = Mutation.type), size=2.2) + geom_line(data = data_Loess , aes(x = `cDNA..`, y = smoothed15_avg ), color = "red", size =1.5)+  # LOESS fit
+  labs(title = "       3 Day Donor Averaged (After LOESS Adjustment)", x = "gDNA position", y = "LogFC",color = "Mutation Type") +  scale_color_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d")) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    aspect.ratio = .75, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+  )+
+  ylim(y_limits)
+p_post_LOESS
+
+ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = logFC_adj_avg)) +
+  geom_point(aes(color = ClinVar), size=2.2) + geom_line(data = data_Loess , aes(x = `cDNA..`, y = smoothed15_avg ), color = "red", size =1.5)+  # LOESS fit
+  labs(title = "       3 Day Donor Averaged (After LOESS Adjustment)", x = "gDNA position", y = "LogFC",color = "Mutation Type") +  scale_color_manual(values = c(
+  "Benign" = "#00ff00", 
+  "Likely Benign" = "lightgreen", 
+  "VUS" = "pink", 
+  "Likely Pathogenic" = "#de8bf9",  # A lighter red for Likely Pathogenic
+  "X-SCID" = "#f94040", 
+ "X-SCID HMGD" = "#f94040",  
+ "Unclassified" = "darkgrey") ) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    aspect.ratio = .75, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+  )+
+  ylim(y_limits)
+caption_grob_avg <- textGrob("LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.45, "npc"), 
+                         just = "center", gp = gpar(fontsize = 10))
+
+# Arrange the plot and caption side by side
+combined_plot_LOESS <- grid.arrange(
+  p_post_LOESS, 
+  arrangeGrob(caption_grob_avg, nrow = 2),  # Create a layout with the caption above the legend
+  ncol = 2, 
+  widths = c(3, 1),  # Adjust the relative widths of the plot and the caption
+  heights = c(1, 0.1)  # Adjust the relative heights of the plot and the caption
+)
+combined_plot_LOESS
+
+####additonal comparision plots +sd values#############################################
+# Calculate var for synonymous mutations before LOESS adjustment
+var_before <- data_5g_13g_combined %>%
+  filter(Mutation.type == "Syn") %>%
+  summarize(var_avgFC = var(avgFC)) %>%
+  pull(var_avgFC)
+
+# Calculate var for synonymous mutations after LOESS adjustment
+var_after <- data_5g_13g_combined %>%
+  filter(Mutation.type == "Syn") %>%
+  summarize(var_logFC_adj_avg = var(logFC_adj_avg)) %>%
+  pull(var_logFC_adj_avg)
+
+
+# Extract raw data for "Syn" mutations
+data_before <- data_5g_13g_combined %>%
+  filter(Mutation.type == "Syn") %>%
+  pull(avgFC)
+
+data_after <- data_5g_13g_combined %>%
+  filter(Mutation.type == "Syn") %>%
+  pull(logFC_adj_avg)
+
+# Combine raw data into a data frame
+data_combined <- data.frame(
+  value = c(data_before, data_after),
+  group = factor(c(rep("Before", length(data_before)), rep("After", length(data_after))))
+)
+library(car)
+# Perform Levene's Test
+levene_test <- leveneTest(value ~ group, data = data_combined)
+levene_test
+
+# Format captions
+caption_before <- paste("Syn SD before LOESS:", round(var_before, 3))
+caption_after <- paste("Syn SD after LOESS:", round(var_after, 3))
+caption_combined <- paste("                          Change in Synonymous SD:", round(var_before, 3), "->" ,round(var_after, 3) )
+#creating axis limits
+x_limits_2 <- range(c(data_5g_13g_combined$avgFC, data_5g_13g_combined$avgFC))
+y_limits_2 <- c(0, 130)
+
+#Before
+plot_before <-ggplot(data_5g_13g_combined, aes(x = `avgFC`))+
+  geom_histogram(aes(fill=Mutation.type))+
+  xlim(x_limits_2) +
+  ylim(y_limits_2) +labs(title = "      Donor Avg Before/After LOESS Adjustment", x = "LogFC", y = "SNVs", fill = "Mutation Type") +  # Use 'fill' for histogram legend
+  scale_fill_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d"))+
+  theme_minimal()+
+  theme(
+    axis.text.x = element_text( hjust = 1, size = 10), axis.title.y = element_text(size = 10), # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    aspect.ratio = .75, plot.title = element_text(hjust = 0.5, size = 12), axis.title.x = element_text( size = 10),
+    plot.margin = margin(5, 5, 0, 5))
+
+
+
+#after
+plot_after <- ggplot(data_5g_13g_combined, aes(x = logFC_adj_avg)) +
+  geom_histogram(aes(fill = Mutation.type)) +
+  xlim(x_limits_2) +
+  ylim(y_limits_2 ) +
+  labs(
+    x = "Adjusted LogFC",
+    y = "SNVs",
+    fill = "Mutation Type" # Ensure this variable is defined correctly
+  ) +
+  scale_fill_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d")) +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(hjust = 1, size =10),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5),
+    panel.grid = element_blank(),axis.title.y = element_text(size = 10),
+    axis.title.y.right = (element_blank()), 
+    aspect.ratio = .75,
+    plot.title = element_text(hjust = 0.5, size = 10),  # Set title size here
+    axis.title.x = element_text(size = 10),legend.position = "none",  # Hide the legend in this plot
+    plot.caption = element_text(size = 9, hjust = 1),
+    plot.margin = margin(0, 5, 5, 5))# Adjust caption text size
+  
+
+# Stack plots on top of each other with `plot_grid()`
+combined_plot <- plot_grid(
+  plot_before,
+  plot_after,
+  ncol = 1,
+  align = 'v', 
+  # Align vertically
+  axis = 'tblr', rel_heights = c(1, 1),
+  rel_widths = c(1, 1)  # Relative heights for the plots
+)
+combined_plot
+
+
+
+
+
+
+###########################mixed modeling and cutoffs#####################################
+
+#mixmodel with nonsense/ synonomus 
+data_5g_13g_nonsyn <- data_5g_13g_combined%>%filter(Mutation.type %in% c("Non", "Syn"))
+#123 data points
+
+
+# Assuming SCID_data3 is a data frame containing the 'logFC' column
+LOGfc_5g_13g_nonsyn <- data_5g_13g_nonsyn$logFC_adj_avg
+
+# Fit a Gaussian mixture model with 2 components
+set.seed(70)
+mixmdl_5g_13g_nonsyn <- normalmixEM(LOGfc_5g_13g_nonsyn , k = 2)
+mixmdl_5g_13g_nonsyn$Mutation.type <- data_5g_13g_nonsyn$Mutation.type
+## number of iterations= 5
+posterior_5g_13g_nonsyn <- mixmdl_5g_13g_nonsyn$posterior
+# Define thresholds for classifying functional SNVs
+thresholds_5g_13g_nonsyn<- c(.99, .01)
+
+
+
+
+# Classify SNVs based on posterior probabilities
+functional_classification_5g_13g_nonsyn <- data.frame(logFC_adj_avg =data_5g_13g_nonsyn$logFC_adj_avg, 
+  posterior = mixmdl_5g_13g_nonsyn$posterior,
+  label = ifelse(
+    posterior_5g_13g_nonsyn[, 1] > thresholds_5g_13g_nonsyn[1], 'non-functional',
+    ifelse(
+      posterior_5g_13g_nonsyn[, 1] < thresholds_5g_13g_nonsyn[2], 'functional', 'intermediate'
+    )
+  )
+)
+
+
+  
+the.plot_5g_13g_nonsyn <- ggplot(data.frame(x = mixmdl_5g_13g_nonsyn$x), fill = x) +
+  geom_histogram(aes(x, ..density.., fill = ..x..), binwidth = .3) + geom_density(aes(x = x))+
+  stat_function(geom = "line", fun = plot_mix_comps,
+                args = list(mixmdl_5g_13g_nonsyn$mu[1], mixmdl_5g_13g_nonsyn$sigma[1], lam = mixmdl_5g_13g_nonsyn$lambda[1]),
+                colour = "darkred", lwd = 1.5) +
+  stat_function(geom = "line", fun = plot_mix_comps,
+                args = list(mixmdl_5g_13g_nonsyn$mu[2], mixmdl_5g_13g_nonsyn$sigma[2], lam = mixmdl_5g_13g_nonsyn$lambda[2]),
+                colour = "blue", lwd = 1.5)+  labs(x=  "Avg Adjusted logFC", title = "logFC EM-Model (Nonsense and Synonymous SNVs)", y= "density")+ 
+  theme_minimal(base_size = 15)+ theme(panel.grid = element_blank(),
+    axis.text.x = element_text(hjust = 1, size =10),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5),
+    axis.title.y = element_text(size = 16),
+    axis.title.y.right = (element_blank()), 
+    aspect.ratio = .5,
+    plot.title = element_text(hjust = 0.5, size = 16),  # Set title size here
+    axis.title.x = element_text(size = 16),
+    plot.margin = margin(5, 5, 5, 5))+
+  scale_fill_gradient(low = "red", high = "#42bd0d")
+#geom_vline(xintercept = c(-1.307651, 	-0.7963424))+
+the.plot_5g_13g_nonsyn
+
+the.plot_5g_13g_nonsyn2 <- ggplot(data_5g_13g_nonsyn, aes(x = logFC_adj_avg)) +
+  geom_histogram(aes(logFC_adj_avg, ..density.., fill = Mutation.type), binwidth = .3) + geom_density(aes(x = logFC_adj_avg))+
+  stat_function(geom = "line", fun = plot_mix_comps,
+                args = list(mixmdl_5g_13g_nonsyn$mu[1], mixmdl_5g_13g_nonsyn$sigma[1], lam = mixmdl_5g_13g_nonsyn$lambda[1]),
+                colour = "darkred", lwd = 1.5) +
+  stat_function(geom = "line", fun = plot_mix_comps,
+                args = list(mixmdl_5g_13g_nonsyn$mu[2], mixmdl_5g_13g_nonsyn$sigma[2], lam = mixmdl_5g_13g_nonsyn$lambda[2]),
+                colour = "blue", lwd = 1.5)+  labs(x=  "Avg. Adjusted logFC", title = "EM-Model (Nonsense and Synonymous SNVs)", y= "Density",fill = "Mutation Type")+ 
+  theme_minimal(base_size = 15)+ theme(panel.grid = element_blank(),
+    axis.text.x = element_text(hjust = 1, size =10),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5),
+    axis.title.y = element_text(size = 16, margin = margin(r = 15)),
+    axis.title.y.right = (element_blank()), 
+    aspect.ratio = .5,
+    plot.title = element_text(hjust = 0.5, size = 16),  # Set title size here
+    axis.title.x = element_text(size = 16, , margin = margin(t = 15)),
+    plot.margin = margin(5, 5, 5, 5))  +
+  scale_fill_manual(values = c( "Non" = "#e63f29", "Syn" = "#42bd0d")) 
+the.plot_5g_13g_nonsyn2
+
+
+
+
+#######extrapolating threshold values #######################################
+data_thresholdnon_syn <- data_5g_13g_nonsyn%>%select(logFC_adj_avg)
+set.seed(72) # Ensure reproducibility
+
+# Define a function to fit the GMM, classify data, and repeat the process
+run_gmm_classification <- function( num_iterations = 1000) {
+  # Initialize a data frame to store results
+   new_point_labels <- data.frame(
+    logFC_adj_avg = numeric(),
+    posterior.comp.1 = numeric(),
+    posterior.comp.2 = numeric(),
+    label = character(),
+    iteration = integer(),
+    stringsAsFactors = FALSE
+  )
+   
+
+    
+  # Loop to add data points and run GMM
+  for (iteration in 1:num_iterations) {
+    # Add a random data point within the specified range
+    new_point <- data.frame(logFC_adj_avg = runif(1, min = -2, max = -0.5))
+    data <- rbind(data_thresholdnon_syn , new_point)
+    
+    # Fit the Gaussian mixture model with 2 components
+    mixmdl <- normalmixEM(data$logFC_adj_avg, k = 2)
+    posterior <- mixmdl$posterior
+    
+    # Define thresholds for classifying functional SNVs
+    thresholds <- c(0.99, 0.01)
+    
+     # Classify SNVs based on posterior probabilities for the new point
+    new_point_posterior <- posterior[nrow(posterior), ]
+    
+    # Determine the label for the new point
+    new_point_label <- ifelse(
+      new_point_posterior[1] > thresholds[1], 'non-functional',
+      ifelse(new_point_posterior[1] < thresholds[2], 'functional', 'intermediate')
+    )
+    
+    # Store only the new point's classification
+   new_point_labels <- rbind(new_point_labels, data.frame(
+      logFC_adj_avg = new_point$logFC_adj_avg,
+      posterior.comp.1 = new_point_posterior[1],
+      posterior.comp.2 = new_point_posterior[2],
+      label = new_point_label,
+      iteration = iteration
+    ))
+
+  }
+return(new_point_labels)
+}
+
+
+
+# Example usage
+results <- run_gmm_classification()
+
+
+##############avging threshold values ###############
+# Function to run the GMM classification and extract the range for "intermediate" label for each run
+run_gmm_classification_and_extract_ranges <- function() {
+  # Initialize an empty list to store range results
+  range_results_list <- vector("list", 25)
+  
+  # Run the classification 100 times
+  for (i in 1:25) {
+    # Run the classification
+    result <- run_gmm_classification()
+    
+    # Filter the results to get only the rows labeled "intermediate"
+    intermediate_results <- result[result$label == "intermediate", ]
+    
+    # Check if there are any intermediate results
+    if (nrow(intermediate_results) > 0) {
+      # Calculate the range of values in the "intermediate" label column
+      value_range <- range(intermediate_results$logFC_adj_avg, na.rm = TRUE)
+    } else {
+      # If no intermediate results, set the range to NA
+      value_range <- c(NA, NA)
+    }
+    
+    # Store the range in the list
+    range_results_list[[i]] <- data.frame(
+      Run = i,
+      Min = value_range[1],
+      Max = value_range[2]
+    )
+  }
+  
+  # Combine all ranges into one data frame
+  combined_ranges <- do.call(rbind, range_results_list)
+  
+  return(combined_ranges)
+}
+
+# Run the function and store the result
+combined_ranges3 <- run_gmm_classification_and_extract_ranges()
+#############plot min and max###########
+
+#ggplot(combined_ranges, aes(x = Max)) +
+ #geom_histogram(binwidth = .0002)
+#ggplot(combined_ranges, aes(x = Min)) +
+ # geom_histogram(binwidth = .0002)
+
+##################Code below extrapolates the final cutoffs)##################
+summary_threshold <- combined_ranges3%>%summarize(Min = mean(Min), Max = mean(Max))
+
+#trial1: 	(-1.569402, -0.9045760)
+#means: (-1.568645, -0.9053803)
+#to 3 sig figs: (-1.569, -0.905)
+
+#mean to 3 sig figs with HDRT ref:(-1.518 -0.847)
+
+#mean cutoffs for median adjusted Donor scores - > (-1.560,-0.868)
+#above calculation was incorrect, ran LOESS TWICE
+
+#COREECT cutoffs for LOESS & median adjusted Donor scores
+#(-1.516, -0.846)
+
+#VALUES FROM OLD loess: 	(-1.30, -0.79)
+
+
+
+
+# Applying filters
+filtered_results <- results %>%
+  filter(
+    !(label == 'functional' & logFC_adj_avg < -1.516) &
+    !(label == 'non-functional' & logFC_adj_avg > -0.846) &
+    !(
+      label == 'intermediate' &
+      (posterior.comp.1 < 0.25 & logFC_adj_avg <= -1.25)
+    ) &
+    !(
+      label == 'intermediate' &
+      (logFC_adj_avg >= -1.25 & posterior.comp.1 > 0.75)
+    )
+  )
+
+    #EM model cutoff extrapolation
+ggplot(filtered_results, aes(y = posterior.comp.1, x = logFC_adj_avg, color = posterior.comp.1)) + 
+  geom_vline(xintercept = -1.516, linetype = "dashed", color = "darkred") +
+  geom_vline(xintercept = -0.846, linetype = "dashed", color = "blue")  +
+  geom_point() +
+  scale_color_gradient(high = "red", low = "#42bd0d") +
+  labs(title = "EM Model Probalility Distribution", x = "LOESS Adjusted Avgeraged LogFC", y = "P(non-functional)", color = "Non-functional Probality") +
+  theme_minimal(base_size = 14)+ 
+  theme(panel.grid = element_blank(),
+    axis.text.x = element_text(hjust = 1, size =10),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5),
+    axis.title.y = element_text(size = 14, margin = margin(r = 15)),
+    axis.title.y.right = (element_blank()), 
+    aspect.ratio = .5,
+    plot.title = element_text(hjust = 0.5, size = 14, margin = margin(b = 20)),  # Set title size here
+    axis.title.x = element_text(size = 14, , margin = margin(t = 15)),
+    plot.margin = margin(5, 5, 5, 5))
+ 
+ #ggplot(filtered_results, aes(y = posterior.comp.2, x= logFC_adj_avg))+ 
+  #geom_vline(xintercept = c(-1.518402, -0.9045760)) +
+ # geom_point()
+ 
+ ggplot(functional_classification_5g_13g_nonsyn, aes(y = posterior.comp.1, x= logFC_adj_avg, color = posterior.comp.1))+ 
+  geom_vline(xintercept = -1.516, linetype = "dashed", color = "darkred") +
+  geom_vline(xintercept = -0.846, linetype = "dashed", color = "blue")  +
+  geom_point() +
+  scale_color_gradient(high = "red", low = "#42bd0d") +
+  labs(title = "EM Model Probalility Distribution", x = "LOESS Adjusted Avgeraged LogFC", y = "P(non-functional)", color = "Non-functional Probality") +
+  theme_minimal(base_size = 14)+ 
+  theme(panel.grid = element_blank(),
+    axis.text.x = element_text(hjust = 1, size =10),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5),
+    axis.title.y = element_text(size = 14, margin = margin(r = 15)),
+    axis.title.y.right = (element_blank()), 
+    aspect.ratio = .5,
+    plot.title = element_text(hjust = 0.5, size = 14, margin = margin(b = 20)),  # Set title size here
+    axis.title.x = element_text(size = 14, , margin = margin(t = 15)),
+    plot.margin = margin(5, 5, 5, 5))
+ 
+ #ggplot(functional_classification_5g_13g_nonsyn, aes(y = posterior.comp.2, x= logFC_adj_avg))+ 
+  #geom_vline(xintercept = c(-1.569402, -0.9045760)) +
+  #geom_point()
+ 
+ 
+ 
+ ###### figure for final classification ##############
+ 
+ correlation <- cor(data_5g_13g_combined$logFC_5g_adj, data_5g_13g_combined$logFC_13g_adj)
+ 
+ cutoff1 <-c(-1.516)
+ cutoff2 <- c(-0.846)
+ggplot(data_5g_13g_combined, aes(x = logFC_5g_adj, y = logFC_13g_adj)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(title = "Adjusted LogFC Donor 1 vs Donor 2", x = "Donor 1", y = "Donor 2", caption = (N[f] == 304 * " , " ~ N[i] == 63 * " , " ~ N[nf] == 119 * " , " ~ rho == 0.917)) +
+  # Add the segments for the red cutoff
+  geom_segment(aes(x = cutoff1, y = min(logFC_13g_adj), xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = min(logFC_5g_adj), y = cutoff1, xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  # Add the segments for the blue cutoff, pointing in the opposite direction
+  geom_segment(aes(x = cutoff2, y = max(logFC_13g_adj), xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = 3.5, y = cutoff2, xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9) +
+  scale_color_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d"))+
+  theme_minimal(base_size = 15) + xlim(-12,4)+
+  theme(legend.title = element_blank(),
+    legend.position = "right",
+    panel.grid = element_blank() # Remove gridlines
+  )+ theme(axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    axis.title.x = element_text(size = 15, , margin = margin(t = 15)),
+    axis.title.y = element_text(size = 15, margin = margin(r = 15)),
+    aspect.ratio = .7, plot.title = element_text(hjust = 0.5), 
+    plot.caption = element_text(hjust = 0.5, size = 10, face = "italic", margin = margin(t = 10)))+
+  annotate("text", x = -6, y = -7.4, label = "Non-functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkred",fontface = "bold")+
+  annotate("text", x = -6, y = -1, label = "Intermediate", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkgrey",fontface = "bold")+
+  annotate("text", x = 1.85, y = 0, label = "Functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "blue",fontface = "bold")
+mutation_colors <- c(
+  "Benign" = "#00ff00", 
+  "Likely Benign" = "lightgreen", 
+  "VUS" = "pink", 
+  "Likely Pathogenic" = "#de8bf9",  # A lighter red for Likely Pathogenic
+  "X-SCID" = "#f94040", 
+ "X-SCID HMGD" = "darkred", 
+ "Unclassified" = "darkgrey")
+
+ggplot(data_5g_13g_combined, aes(x = logFC_5g_adj, y = logFC_13g_adj)) +
+  geom_point(aes(color = ClinVar)) +
+  labs(title = "Adjusted LogFC Donor 1 vs Donor 2 (ClinVar)", x = "Donor 1", y = "Donor 2", caption = (N[f] == 304 * " , " ~ N[i] == 63 * " , " ~ N[nf] == 119 * " , " ~ rho == 0.917)) +
+  # Add the segments for the red cutoff
+  geom_segment(aes(x = cutoff1, y = min(logFC_13g_adj), xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = min(logFC_5g_adj), y = cutoff1, xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  # Add the segments for the blue cutoff, pointing in the opposite direction
+  geom_segment(aes(x = cutoff2, y = max(logFC_13g_adj), xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = 3.5, y = cutoff2, xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9)+
+  scale_color_manual(values =mutation_colors) +
+  theme_minimal(base_size = 15) + xlim(-12,4)+
+  theme(legend.title = element_blank(),
+    legend.position = "right",
+    panel.grid = element_blank() # Remove gridlines
+  )+ theme(axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    axis.title.x = element_text(size = 15, , margin = margin(t = 15)),
+    axis.title.y = element_text(size = 15, margin = margin(r = 15)),
+    aspect.ratio = .7, plot.title = element_text(hjust = 0.5), 
+    plot.caption = element_text(hjust = 0.5, size = 10, face = "italic", margin = margin(t = 10)))+
+  annotate("text", x = -6, y = -7.4, label = "Non-functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkred",fontface = "bold")+
+  annotate("text", x = -6, y = -1, label = "Intermediate", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkgrey",fontface = "bold")+
+  annotate("text", x = 1.85, y = 0, label = "Functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "blue",fontface = "bold")
+# Counting classifications
+non_functional <- data_5g_13g_combined %>%
+  filter(
+    logFC_5g_adj <= -1.516 & logFC_13g_adj <= -1.516
+  )
+
+functional <- data_5g_13g_combined %>%
+  filter(
+    logFC_5g_adj >= -0.846 & logFC_13g_adj >= -0.846
+  )
+
+intermediate <- data_5g_13g_combined %>%
+  filter(
+    !(logFC_5g_adj <= -1.516 & logFC_13g_adj <= -1.516) &
+    !(logFC_5g_adj >= -0.846 & logFC_13g_adj >= -0.846)
+  )
+
+# Ensure all rows are classified
+total_rows <- nrow(non_functional) + nrow(functional) + nrow(intermediate)
+
+if (total_rows == 486) {
+  print("All points are classified correctly.")
+} else {
+  print(paste("Classification failed. Total rows classified:", total_rows))
+}
+
+
+mutation_colors <- c(
+  "Benign" = "#00ff00", 
+  "Likely Benign" = "lightgreen", 
+  "VUS" = "pink", 
+  "Likely Pathogenic" = "#de8bf9",  # A lighter red for Likely Pathogenic
+  "X-SCID" = "#f94040", 
+ "X-SCID HMGD" = "darkred", 
+ "Unclassified" = "darkgrey") 
+  
+  summary_stats <- function(y) {
+    r <- quantile(y, probs = c(0.25, 0.5, 0.75))
+    names(r) <- c("ymin", "y", "ymax")
+    r
+  }
+  
+#for t test?
+  #After
+ggplot(data_5g_13g_combined, aes(x = Mutation.type, y = logFC_adj_avg)) +
+    geom_jitter(aes(color = ClinVar), width = 0.2, size = 2, alpha = 0.6) +  # Add transparency to jittered points
+    stat_summary(fun.data = summary_stats, geom = "errorbar", width = 0.1, size = 0.5, color = "black") +  # Increase size of error bars
+    #stat_summary(fun = median, geom = "point", size = 1, color = "black") +  # Increase size of median points
+    scale_color_manual(values = mutation_colors) +
+    labs(x = "", y = "Avg Adj LogFC", title = "LogFC After Adjustment ") +  # Add title
+    theme_minimal(base_size = 7.5) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+      axis.title.x = element_text(size = 8, face = "bold", margin = margin(t = 10)),
+      axis.title.y = element_text(size = 8, face = "bold", margin = margin(r = 10)),
+      axis.text = element_text(size = 7),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line = element_line(colour = "black"),
+      axis.ticks = element_line(colour = "black")
+    ) + 
+  geom_hline(yintercept = -1.516, linetype = "dashed", color = "darkred") +
+  geom_hline(yintercept = -0.846, linetype = "dashed", color = "blue") +  # Add horizontal line at y = 0
+    scale_y_continuous(breaks = seq(-12, 3, by = 1), limits = c(-12, 3))  # Adjust y-axis limits and breaks
+
+#from averaged data
+non_functional_donor_avg <- data_5g_13g_combined %>%
+  filter(
+    logFC_adj_avg <= -1.516  )
+
+functional_donor_avg <- data_5g_13g_combined %>%
+  filter(
+    logFC_adj_avg>= -0.846)
+
+intermediate_donor_avg <- data_5g_13g_combined %>%
+  filter(
+    !(logFC_adj_avg<= -1.516 ) &
+    !(logFC_adj_avg >= -0.846 ))
+
+data_5g_13g_combined <- data_5g_13g_combined %>%
+  mutate(EM_model_classification = case_when(
+    logFC_adj_avg <= -1.516 ~ "non-functional",
+    logFC_adj_avg >= -0.846 ~ "functional",
+    TRUE ~ "intermediate"
+  ))
+
+#avg histogram
+ggplot(data_5g_13g_combined, aes(x = logFC_adj_avg)) +
+  geom_histogram(aes(fill = Mutation.type), bins=50)  +
+  labs(
+    x = "Adjusted Donor Avg LogFC",
+    y = "SNVs",
+    fill = "Mutation Type" # Ensure this variable is defined correctly
+  ) +
+  scale_fill_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d")) +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.text.x = element_text(hjust = 1, size =10),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5),
+    panel.grid = element_blank(),axis.title.y = element_text(size = 10),
+    axis.title.y.right = (element_blank()), 
+    aspect.ratio = .7,
+    plot.title = element_text(hjust = 0.5, size = 10),  # Set title size here
+    axis.title.x = element_text(size = 10),legend.position = "none",  # Hide the legend in this plot
+    plot.caption = element_text(size = 9, hjust = 1),
+    plot.margin = margin(0, 5, 5, 5))+# Adjust caption text size+ 
+  geom_vline(xintercept = -1.516, linetype = "dashed", color = "darkred") +
+  geom_vline(xintercept = -0.846, linetype = "dashed", color = "blue")
+
+  ############mRNA analysis   ############
+#creating a combined column
+data_3m_11m_combined <- data.frame(
+  LogFC_3m = annotated_3m_1Libp$fold_change,
+  LogFC_11m = annotated_11m_2Libp$fold_change, 
+   LogFC_5g = annotated_5g_1Libp$fold_change,
+  LogFC_13g = annotated_13g_2Libp$fold_change
+)
+
+# Calculate additional columns
+data_3m_11m_combined <- data_3m_11m_combined %>%
+  mutate(
+    avgFC_cDNA = (LogFC_3m + LogFC_11m) / 2,
+    avgFC_gDNA = (LogFC_5g + LogFC_13g) / 2,
+    `(avgLogFC_cDNA)-(avgLogFC_gDNA)` = (avgFC_cDNA - avgFC_gDNA ),
+    varFC_cDNA = (LogFC_3m - avgFC_cDNA)^2,
+    sdFC_cDNA = sqrt(varFC_cDNA),
+    `cDNA..` = annotated_3m_1Libp$`cDNA..`,
+    `pro..` = annotated_3m_1Libp$`pro..`,
+    Mutation.type = annotated_3m_1Libp$Mutation.type,
+    ClinVar = annotated_3m_1Libp$ClinVar, 
+    Mutcode = annotated_3m_1Libp$Mutcode)
+
+#position vs Adj RNA expression 
+ggplot(data_3m_11m_combined, aes(x = `cDNA..`, y = `(avgLogFC_cDNA)-(avgLogFC_gDNA)`)) +
+  geom_point(aes(color = Mutation.type), size=2.2) +
+  labs(title = "gDNA Position vs Adj RNA Expression", x = " gDNA position", y = "(avgLogFC_cDNA)   -  (avgLogFC_gDNA)",color = "Mutation Type") +  scale_color_manual(values = c("Mis" = "#1f77b4", "Non" = "#e63f29", "Syn" = "#42bd0d")) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), 
+    aspect.ratio = .9, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+  )
+
+
+
+
+########################### Figs vs Conservation and Variant predictors###################
+#Adding conservation scores
+SCID_conserve2 <- read_csv("~/Downloads/R_studio/SCID_conserve2.csv")
+colnames(SCID_conserve2)[colnames(SCID_conserve2) == "pro #"] <- "pro"
+colnames(data_5g_13g_combined)[colnames(data_5g_13g_combined) == "pro.."] <- "pro"
+# Ensure unique `pro` values in SCID_conserve2 by selecting only the first occurrence
+SCID_conserve2 <- SCID_conserve2 %>%
+  distinct(pro, .keep_all = TRUE)
+
+# Perform a left join to add `exon_conservation_scores` without duplicating rows
+data_5g_13g_combined <- data_5g_13g_combined %>%
+  left_join(SCID_conserve2 %>% select(pro, exon_conservation_scores), by = "pro")
+
+data_5g_13g_combined_mis <- data_5g_13g_combined %>%filter(Mutation.type =="Mis")
+
+ggplot(data_5g_13g_combined, aes(x = logFC_5g_adj, y = logFC_13g_adj)) + geom_point(aes(color = ClinVar, size = exon_conservation_scores)) + labs(title = "Adjusted LogFC Donor 1 vs Donor 2 (ClinVar)", x = "Donor 1", y = "Donor 2", caption = (N[f] == 304 * " , " ~ N[i] == 63 * " , " ~ N[nf] == 119 * " , " ~ rho == 0.917 * " , " ~ Cutoffs == -1.518: -0.847)) +
+  geom_segment(aes(x = cutoff1, y = min(logFC_13g_adj), xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = min(logFC_5g_adj), y = cutoff1, xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  # Add the segments for the blue cutoff, pointing in the opposite direction
+  geom_segment(aes(x = cutoff2, y = max(logFC_13g_adj), xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = 3.5, y = cutoff2, xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9)+
+  scale_color_manual(values =mutation_colors) +
+  theme_minimal(base_size = 15) + xlim(-12,4)+
+  theme(legend.title = element_blank(),
+    legend.position = "right",
+    panel.grid = element_blank() # Remove gridlines
+  )+ theme(axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    axis.title.x = element_text(size = 15, , margin = margin(t = 15)),
+    axis.title.y = element_text(size = 15, margin = margin(r = 15)),
+    aspect.ratio = .7, plot.title = element_text(hjust = 0.5), 
+    plot.caption = element_text(hjust = 0.5, size = 10, face = "italic", margin = margin(t = 10)))+
+  annotate("text", x = -6, y = -7.4, label = "Non-functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkred",fontface = "bold")+
+  annotate("text", x = -6, y = -1, label = "Intermediate", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkgrey",fontface = "bold")+
+  annotate("text", x = 1.85, y = 0, label = "Functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "blue",fontface = "bold")+
+  scale_size_continuous(name = "Exon Conservation Score", range = c(1, 6))  # Adjust size range as needed
+
+ggplot(data_5g_13g_combined_mis, aes(x = logFC_5g_adj, y = logFC_13g_adj)) + geom_point(aes(color = ClinVar, size = exon_conservation_scores)) + labs(title = "Adjusted LogFC Donor 1 vs Donor 2 Misense (ClinVar)", x = "Donor 1", y = "Donor 2", caption = (N[f] == 304 * " , " ~ N[i] == 63 * " , " ~ N[nf] == 119 * " , " ~ rho == 0.917 * " , " ~ Cutoffs == -1.518: -0.847)) +
+  geom_segment(aes(x = cutoff1, y = min(logFC_13g_adj), xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = min(logFC_5g_adj), y = cutoff1, xend = cutoff1, yend = cutoff1), color = "darkred", linetype = "dashed", size = .9) +
+  # Add the segments for the blue cutoff, pointing in the opposite direction
+  geom_segment(aes(x = cutoff2, y = max(logFC_13g_adj), xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9) +
+  geom_segment(aes(x = 3.5, y = cutoff2, xend = cutoff2, yend = cutoff2), color = "blue", linetype = "dashed", size = .9)+
+  scale_color_manual(values =mutation_colors) +
+  theme_minimal(base_size = 15) + xlim(-12,4)+
+  theme(legend.title = element_blank(),
+    legend.position = "right",
+    panel.grid = element_blank() # Remove gridlines
+  )+ theme(axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    axis.title.x = element_text(size = 15, , margin = margin(t = 15)),
+    axis.title.y = element_text(size = 15, margin = margin(r = 15)),
+    aspect.ratio = .7, plot.title = element_text(hjust = 0.5), 
+    plot.caption = element_text(hjust = 0.5, size = 10, face = "italic", margin = margin(t = 10)))+
+  annotate("text", x = -6, y = -7.4, label = "Non-functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkred",fontface = "bold")+
+  annotate("text", x = -6, y = -1, label = "Intermediate", 
+           hjust = 0, vjust = 0, size = 3.4, color = "darkgrey",fontface = "bold")+
+  annotate("text", x = 1.85, y = 0, label = "Functional", 
+           hjust = 0, vjust = 0, size = 3.4, color = "blue",fontface = "bold")+
+  scale_size_continuous(name = "Exon Conservation Score", range = c(1, 6))  # Adjust size range as needed
+
+
+#ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = logFC_adj_avg)) +
+  #geom_point(aes(color = ClinVar, size = exon_conservation_scores)) +  # LOESS fit
+  #labs(title = "       3 Day Donor Averaged (with conservation)", x = "gDNA position", y = "LogFC",color = "Mutation Type") +  #scale_color_manual(values = c(
+ # "Benign" = "#00ff00", 
+ # "Likely Benign" = "lightgreen", 
+ # "VUS" = "pink", 
+ # "Likely Pathogenic" = "#de8bf9",  # A lighter red for Likely Pathogenic
+ # "X-SCID" = "#f94040", 
+ #"X-SCID HMGD" = "darkred",  
+ #"Unclassified" = "darkgrey") ) +  
+ # geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+#  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+#  theme_minimal() +
+#  theme(
+ #   axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+ #   axis.text = element_text(size = 10),  # Adjust axis text size
+  #  axis.ticks = element_line(size = 0.5), 
+  #   panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+   # aspect.ratio = .75, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+ # )+
+ # ylim(y_limits)+
+ # scale_size_continuous(name = "Exon Conservation Score", range = c(1, 6)) 
+#caption_grob_avg <- textGrob("LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.45, "npc"), 
+                        # just = "center", gp = gpar(fontsize = 10))
+
+ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = logFC_adj_avg)) +
+  geom_point(aes(color = ClinVar), size = 2.5, alpha = 0.75) +
+  labs(
+    title = "       3 Day Donor Averaged Scores",
+    x = "gDNA position", y = "Score", color = "Mutation Type"
+  ) +
+  scale_color_manual(values = c(
+    "Benign" = "#00ff00", 
+    "Likely Benign" = "lightgreen", 
+    "VUS" = "pink", 
+    "Likely Pathogenic" = "#de8bf9",  
+    "X-SCID" = "#f94040", 
+    "X-SCID HMGD" = "darkred",  
+    "Unclassified" = "darkgrey"
+  )) +
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +
+  geom_hline(yintercept = -1.518, color = "darkred", size = 0.6, linetype = "dashed") +
+  geom_hline(yintercept = -0.847, color = "blue", size = 0.6, linetype = "dashed") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10),
+    axis.ticks = element_line(size = 0.5),
+    panel.grid = element_blank(),
+    axis.title.y = element_text(size = 15),
+    aspect.ratio = .75,
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_text(size = 15, margin = margin(t = 12))
+  ) +
+  ylim(y_limits) +
+  scale_size_continuous(name = "Exon Conservation Score", range = c(1, 6))
+
+caption_grob_avg <- textGrob(
+  "LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.45, "npc"), 
+  just = "center", gp = gpar(fontsize = 10)
+)
+
+
+ggplot(data_5g_13g_combined, aes(x = `cDNA..`, y = logFC_adj_avg)) +
+ geom_point(aes(color = ClinVar, size = exon_conservation_scores)) +  
+   geom_point(shape = 1,size = 12,colour = "black")+ # LOESS fit
+  labs(title = "       3 Day Donor Averaged Misense Variants (with conservation)", x = "gDNA position", y = "LogFC",color = "Mutation Type") +  scale_color_manual(values = c(
+  "Benign" = "#00ff00", 
+  "Likely Benign" = "lightgreen", 
+  "VUS" = "pink", 
+  "Likely Pathogenic" = "#de8bf9",  # A lighter red for Likely Pathogenic
+  "X-SCID" = "#f94040", 
+ "X-SCID HMGD" = "darkred",  
+ "Unclassified" = "darkgrey") ) +  
+  geom_vline(xintercept = 772.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  geom_vline(xintercept = 677.5, linetype = "dashed", color = "black", size = 0.5) +  # Adjust vertical line style
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text angle
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.ticks = element_line(size = 0.5), 
+     panel.grid = element_blank(), axis.title.y.right = element_blank(), 
+    aspect.ratio = .75, plot.title = element_text(hjust = 0.5), axis.title.x = element_text(margin = margin(t = 12))
+  )+
+  ylim(y_limits)+
+  scale_size_continuous(name = "Exon Conservation Score", range = c(1, 6)) 
+caption_grob_avg <- textGrob("LOESS span = 0.15", x = unit(-.3, "npc"), y = unit(0.45, "npc"), 
+                         just = "center", gp = gpar(fontsize = 10))
+
+########################### % Classifications #####################
+
+
+
+
+# Define a function to calculate counts for each ClinVar classification within a dataset
+calculate_clinvar_summary <- function(data, category_name) {
+  data %>%
+    count(ClinVar) %>%
+    mutate(Category = category_name)
+}
+
+# Calculate counts for each ClinVar classification in functional, intermediate, and nonfunctional datasets
+functional_summary <- calculate_clinvar_summary(functional_donor_avg, "Functional")
+intermediate_summary <- calculate_clinvar_summary(intermediate_donor_avg, "Intermediate")
+nonfunctional_summary <- calculate_clinvar_summary(non_functional_donor_avg, "Nonfunctional")
+
+# Combine all results into a single table
+clinvar_summary <- bind_rows(functional_summary, intermediate_summary, nonfunctional_summary)
+
+# Calculate total counts for each ClinVar classification across all datasets
+total_clinvar_counts <- clinvar_summary %>%
+  group_by(ClinVar) %>%
+  summarize(Total_Count = sum(n))
+
+# Merge the total counts back into the summary table and calculate percentages specific to each ClinVar classification
+clinvar_summary_with_percentage <- clinvar_summary %>%
+  left_join(total_clinvar_counts, by = "ClinVar") %>%
+  mutate(Percentage = (n / Total_Count) * 100)
+
+# Output the summary table with counts and percentages for each ClinVar classification across all datasets
+clinvar_summary_with_percentage
+
+#SAVE FILE 
+write.csv(data_5g_13g_combined, file = "~/Downloads/R_studio/data_5g_13g_combined.csv", row.names = FALSE)
+#SAVE FILE 
+write.csv(data_5g_13g_combined, file = "~/Downloads/R_studio/data_5g_13g_combined_mis.csv", row.names = FALSE)
+#misense attribute for chimera
+
+
+# Define output file name
+output_file <- "il2rg_output.defattr"
+
+# Open file for writing
+file_conn <- file(output_file, "w")
+
+# Write header
+writeLines(c(
+  "# Attribute file for ChimeraX",
+  "attribute: avg_logFC_adj",
+  "match mode: 1-to-1",
+  "recipient: residues",
+  ""
+), file_conn)
+
+# Write each row in the correct format
+for (i in seq_len(nrow(avg_logFC))) {
+  line <- sprintf("\t:%s\t%f", avg_logFC$pro[i], avg_logFC$avg_logFC_adj[i])
+  writeLines(line, file_conn)
+}
+
+# Close file
+close(file_conn)
+
+# Print completion message
+cat("Defattr file saved as:", output_file, "\n")
+
+
+#
+
+```
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

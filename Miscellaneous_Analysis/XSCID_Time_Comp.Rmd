@@ -1,0 +1,444 @@
+---
+title: "X-SCID_negative_v_positive"
+output: html_document
+date: "2024-07-31"
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(readr)
+library(readxl)
+library(ggplot2)
+library(broom)
+install.packages(("writexl"))
+library("writexl")
+install.packages("googlesheets4")
+library(googlesheets4)
+library(tidyr)
+install.packages("zoo")
+library(zoo)
+library(grid) 
+library(gridExtra)
+install.packages("patchwork")
+library(patchwork)
+install.packages('mixtools')
+library(mixtools)
+install.packages("devtools")
+devtools::install_github("choisy/cutoff")
+library("cutoff")
+install.packages("bbmle")
+library("bbmle")
+library("cowplot")
+#' Plot a Mixture Component
+#' 
+#' @param x Input data
+#' @param mu Mean of component
+#' @param sigma Standard deviation of component
+#' @param lam Mixture weight of component
+plot_mix_comps <- function(x, mu, sigma, lam) {
+  lam * dnorm(x, mu, sigma)
+}
+
+
+#______________________________________________________________________
+#Donor 1 RNA 3 DAY
+annotated_3m_1Libp<-read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_3m_1Libp_S34_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_3m_1Libp$`WTaa`, annotated_3m_1Libp$`pro..`, annotated_3m_1Libp$mutaminoacid,sep = "")
+annotated_3m_1Libp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 1 gDNA 3 Day
+annotated_5g_1Libp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_5g_1Libp_S7_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_5g_1Libp$`WTaa`, annotated_5g_1Libp$`pro..`, annotated_5g_1Libp$mutaminoacid,sep = "")
+annotated_5g_1Libp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 2 mRNA 3 Day
+annotated_11m_2Libp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_11m_2Libp_S42_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_11m_2Libp $`WTaa`, annotated_11m_2Libp $`pro..`, annotated_11m_2Libp $mutaminoacid,sep = "")
+annotated_11m_2Libp $Mutcode <- Mutcode
+#______________________________________________________________________
+
+#Donor 2 gDNA 3Day
+annotated_13g_2Libp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_13g_2Libp_S15_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_13g_2Libp$`WTaa`, annotated_13g_2Libp $`pro..`, annotated_13g_2Libp $mutaminoacid,sep = "")
+annotated_13g_2Libp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 1 mRNA 14 Day
+annotated_20m_1Libp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_20m_1Libp_S51_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_20m_1Libp$`WTaa`, annotated_20m_1Libp $`pro..`, annotated_20m_1Libp $mutaminoacid,sep = "")
+annotated_20m_1Libp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 1 gDNA 14 Day
+annotated_21g_1Libp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_21g_1Libp_S21_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_21g_1Libp$`WTaa`, annotated_21g_1Libp $`pro..`, annotated_21g_1Libp $mutaminoacid,sep = "")
+annotated_21g_1Libp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 2 mRNA 14Day
+annotated_28m_2Linp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_28m_2Linp_S56_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_28m_2Linp$`WTaa`, annotated_28m_2Linp $`pro..`, annotated_28m_2Linp $mutaminoacid,sep = "")
+annotated_28m_2Linp$Mutcode <- Mutcode
+
+#______________________________________________________________________
+#Donor 2 gDNA 14Day
+annotated_29g_2Libp <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_29g_2Libp_S28_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_29g_2Libp$`WTaa`, annotated_29g_2Libp $`pro..`, annotated_29g_2Libp $mutaminoacid,sep = "")
+annotated_29g_2Libp$Mutcode <- Mutcode
+#______________________________________________________________________
+
+annotated_4m_1Libn <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_4m_1Libn_S35_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_4m_1Libn$`WTaa`, annotated_4m_1Libn $`pro..`, annotated_4m_1Libn $mutaminoacid,sep = "")
+annotated_4m_1Libn$Mutcode <- Mutcode
+
+#______________________________________________________________________
+
+annotated_6g_1Libn <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_6g_1Libn_S8_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_6g_1Libn$`WTaa`, annotated_6g_1Libn $`pro..`, annotated_6g_1Libn $mutaminoacid,sep = "")
+annotated_6g_1Libn$Mutcode <- Mutcode
+
+#______________________________________________________________________
+
+annotated_12m_2Libn <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_12m_2Libn_S43_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_12m_2Libn$`WTaa`, annotated_12m_2Libn $`pro..`, annotated_12m_2Libn $mutaminoacid,sep = "")
+annotated_12m_2Libn$Mutcode <- Mutcode
+
+#______________________________________________________________________
+
+annotated_14g_2Libn <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_14g_2Libn_S16_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_14g_2Libn$`WTaa`, annotated_14g_2Libn $`pro..`, annotated_14g_2Libn $mutaminoacid,sep = "")
+annotated_14g_2Libn$Mutcode <- Mutcode
+
+#______________________________________________________________________
+
+annotated_19m_1Libn <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_19m_1Libn_S50_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_19m_1Libn$`WTaa`, annotated_19m_1Libn $`pro..`, annotated_19m_1Libn $mutaminoacid,sep = "")
+annotated_19m_1Libn$Mutcode <- Mutcode
+
+#______________________________________________________________________
+
+annotated_22g_1Libn <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_22g_1Libn_S22_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_22g_1Libn$`WTaa`, annotated_22g_1Libn $`pro..`, annotated_22g_1Libn $mutaminoacid,sep = "")
+annotated_22g_1Libn$Mutcode <- Mutcode
+
+#______________________________________________________________________
+
+annotated_27m_2Libn <- read_csv("~/Downloads/diff_exp_results_annotated_adjusted 2/annotated_27m_2Libn_S55_L001_VS_LibPlasmid_S1_L001.csv")%>%drop_na(`WTaa`)
+Mutcode<- paste(annotated_27m_2Libn$`WTaa`, annotated_27m_2Libn $`pro..`, annotated_27m_2Libn $mutaminoacid,sep = "")
+annotated_27m_2Libn$Mutcode <- Mutcode
+#______________________________________________________________________
+
+#creating a combined column
+data_g_combined_Libp <- data.frame(
+  LogFC_5g = annotated_5g_1Libp$fold_change,
+  LogFC_13g = annotated_13g_2Libp$fold_change, 
+  LogFC_21g = annotated_21g_1Libp$fold_change, 
+  LogFC_29g =annotated_29g_2Libp$fold_change
+)
+
+# Calculate additional columns
+data_g_combined_Libp <- data_g_combined_Libp%>%
+  mutate(
+    avgFC = (LogFC_5g + LogFC_13g) / 2,
+    varFC = (LogFC_5g - avgFC)^2,
+    sdFC = sqrt(varFC),
+    `cDNA..` = annotated_5g_1Libp$`cDNA..`,
+    `pro..` = annotated_5g_1Libp$`pro..`,
+    Mutation.type = annotated_5g_1Libp$Mutation.type,
+    Mutcode = annotated_5g_1Libp$Mutcode,
+    ClinVar = annotated_5g_1Libp$ClinVar, 
+    Donor_1_diff = LogFC_5g-LogFC_21g, 
+    Donor_2_diff = LogFC_13g-LogFC_29g, 
+    HDRT = annotated_5g_1Libp$GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG)
+
+#######quick comparison graphs########
+
+
+#________________-Long time gDNA
+# Calculate the correlation
+correlation_14daygDNA <- cor(data_g_combined_Libp$LogFC_21g, data_g_combined_Libp$LogFC_29g)
+
+# Plot with ggplot2
+ggplot(data_g_combined_Libp, aes(x = LogFC_21g, y = LogFC_29g)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = "14 DAY Donor 1 vs Donor 2 gDNA",
+    x = "Donor 1",
+    y = "Donor 2",
+    caption = bquote(rho == .(correlation_14daygDNA))
+  )+geom_smooth()
+
+
+#________________-Short time gDNA
+
+# Calculate the correlation
+correlation_3daygDNA <- cor(data_g_combined_Libp$LogFC_5g, data_g_combined_Libp$LogFC_13g)
+
+# Plot with ggplot2
+ggplot(data_g_combined_Libp, aes(x = LogFC_5g, y = LogFC_13g)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = "3 DAY Donor 1 vs Donor 2 gDNA",
+    x = "Donor 1",
+    y = "Donor 2",
+    caption = bquote(rho == .(correlation_3daygDNA))
+  )+geom_smooth()
+
+#________________-Donor 1 short vs Long
+
+# Calculate the correlation
+correlation_Donor_1_gDNA <- cor(data_g_combined_Libp$LogFC_5g, data_g_combined_Libp$LogFC_21g)
+
+# Plot with ggplot2
+ggplot(data_g_combined_Libp, aes(x = LogFC_5g, y = LogFC_21g)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 1: 3 vs 14 day gDNA",
+    x = "Donor 1 :3 day",
+    y = "Donor 1: 14 day",
+    caption = bquote(rho == .(correlation_Donor_1_gDNA))
+  )+geom_smooth()
+
+#decay plot
+ggplot(data_g_combined_Libp, aes(x = LogFC_5g, y = Donor_1_diff)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 1: 3 vs 14 day gDNA",
+    x = "Donor 1 :3 day",
+    y = "change from day 3 to 14")+geom_smooth()
+
+#decay plot by position
+ggplot(data_g_combined_Libp, aes(x = `cDNA..`, y = Donor_1_diff)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 1 gDNA: 3 vs 14 day change by position",
+    x = "gDNA position",
+    y = "change from day 3 to 14")+geom_smooth()
+#longday logFC by position
+ggplot(data_g_combined_Libp, aes(x = `cDNA..`, y = LogFC_21g)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 1 gDNA at 14 day  by position",
+    x = "gDNA position",
+    y = "Donor 1 LogFC 14 days")+geom_smooth()
+
+#________________-Donor 2 short vs Long
+
+# Calculate the correlation
+correlation_Donor_2_gDNA <- cor(data_g_combined_Libp$LogFC_13g, data_g_combined_Libp$LogFC_29g)
+
+# Plot with ggplot2
+ggplot(data_g_combined_Libp, aes(x = LogFC_13g, y = LogFC_29g)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 2: 3 vs 14 day gDNA",
+    x = "Donor 2 :3 day",
+    y = "Donor 2: 14 day",
+    caption = bquote(rho == .(correlation_Donor_2_gDNA))
+  )+geom_smooth()
+#decay plot
+ggplot(data_g_combined_Libp, aes(x = LogFC_13g, y = Donor_2_diff)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 2: 3 vs 14 day gDNA",
+    x = "Donor 2 :3 day",
+    y = "change from day 3 to 14")+geom_smooth()
+
+#decay plot by position
+ggplot(data_g_combined_Libp, aes(x = `cDNA..`, y = Donor_2_diff)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 2 gDNA: 3 vs 14 day change by position",
+    x = "gDNA position",
+    y = "change from day 3 to 14")+geom_smooth()
+
+#longday logFC by position
+ggplot(data_g_combined_Libp, aes(x = `cDNA..`, y = LogFC_29g)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 2 gDNA at 14 day  by position",
+    x = "gDNA position",
+    y = "Donor 2 LogFC 14 days")+geom_smooth()
+
+
+
+#___________________differences over time plotted
+correlation_Diffs <- cor(data_g_combined_Libp$Donor_1_diff, data_g_combined_Libp$Donor_2_diff)
+ggplot(data_g_combined_Libp, aes(x = `Donor_1_diff`, y = Donor_2_diff)) +
+  geom_point(aes(color = Mutation.type)) +
+  labs(
+    title = " Donor 2  vs Donor 1 gDNA: 3 vs 14 day change by position",
+    x = " Donor 1 change from day 3 to 14",
+    y = "Donor 2change from day 3 to 14",
+    caption = bquote(rho == .(correlation_Diffs)))
+
+########attempt at fast vs slow depleting 
+all_results_pcam01_new1 <- read_csv("~/Downloads/all_results_pcam01_new1.csv")
+all_results_pcam01_new1
+
+results_500U <- all_results_pcam01_new1%>%select( DN_18g_14_500U_S18_L001, DN_14g_12_500U_S14_L001, DN_10g_9_500U_S10_L001, DN_6g_6_500U_S6_L001, DN_2g_3_Lib_S2_L001,DN_Lib_HDRT_S20_L001, GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG, ClinVar, Mutation.type, `cDNA..`, pro.., mutaminoacid, WTaa )
+
+DN_18g_14_500U_S18_L001 <-results_500U %>% select(  DN_18g_14_500U_S18_L001,DN_Lib_HDRT_S20_L001, GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG, ClinVar, Mutation.type, `cDNA..`, pro.., mutaminoacid, WTaa)%>% mutate(Day = 14)%>%rename(Raw_count = DN_18g_14_500U_S18_L001)
+
+
+DN_14g_12_500U_S14_L001 <-results_500U %>% select(  DN_14g_12_500U_S14_L001,DN_Lib_HDRT_S20_L001, GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG, ClinVar, Mutation.type, `cDNA..`, pro.., mutaminoacid, WTaa)%>% mutate(Day = 12)%>%rename(Raw_count = DN_14g_12_500U_S14_L001)
+
+
+DN_10g_9_500U_S10_L001 <-results_500U %>% select(  DN_10g_9_500U_S10_L001,DN_Lib_HDRT_S20_L001, GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG, ClinVar, Mutation.type, `cDNA..`, pro.., mutaminoacid, WTaa)%>% mutate(Day = 9)%>%rename(Raw_count = DN_10g_9_500U_S10_L001)
+
+
+DN_6g_6_500U_S6_L001 <-results_500U %>% select(  DN_6g_6_500U_S6_L001,DN_Lib_HDRT_S20_L001, GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG, ClinVar, Mutation.type, `cDNA..`, pro.., mutaminoacid, WTaa)%>% mutate(Day = 6)%>%rename(Raw_count = DN_6g_6_500U_S6_L001)
+
+DN_2g_3_Lib_S2_L001<-results_500U %>% select(  DN_2g_3_Lib_S2_L001, DN_Lib_HDRT_S20_L001, GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG, ClinVar, Mutation.type, `cDNA..`, pro.., mutaminoacid, WTaa)%>% mutate(Day = 3)%>%rename(Raw_count = DN_2g_3_Lib_S2_L001)
+
+ recombined_500U<- rbind(DN_18g_14_500U_S18_L001,DN_14g_12_500U_S14_L001)
+recombined_500U <-rbind( recombined_500U, DN_10g_9_500U_S10_L001)
+recombined_500U <-rbind(recombined_500U, DN_6g_6_500U_S6_L001)
+recombined_500U <-rbind(recombined_500U, DN_2g_3_Lib_S2_L001)
+recombined_500U <- recombined_500U%>%mutate(Ratio = log2(Raw_count/DN_Lib_HDRT_S20_L001))
+
+recombined_500U_clinvar_filtered <- recombined_500U%>%filter(!is.na(ClinVar))
+recombined_500U_Syn_filtered <- recombined_500U%>%filter(Mutation.type == "Syn")
+recombined_500U_Non_filtered <- recombined_500U%>%filter(Mutation.type == "Non")
+recombined_500U_NonSyn_filtered <- recombined_500U%>%filter(Mutation.type == "Non"|Mutation.type == "Syn")
+
+
+ggplot(recombined_500U, aes(x = `Day`, y = Ratio, color = GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG)) +
+  geom_line()+ 
+  labs(
+    title ="SNVs over time")+theme( legend.position = "none")
+
+ggplot(recombined_500U, aes(x = `Day`, y = Ratio, color = GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG)) +
+  geom_line(aes(color = ClinVar))+ 
+  labs(
+    title ="SNVs over time (avg of clin var SNVs)")+theme( legend.position = "none")
+
+
+ggplot(recombined_500U_clinvar_filtered, aes(x = `Day`, y = Ratio, color = GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG)) +
+  geom_line()+ 
+  labs(
+    title ="Clin Var SNVs over time")+theme( legend.position = "none")
+
+ggplot(recombined_500U_Syn_filtered , aes(x = `Day`, y = Ratio, color = GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG)) +
+  geom_line()+ 
+  labs(
+    title ="Synonomus mutations over time")+theme( legend.position = "none")
+
+ggplot(recombined_500U_Non_filtered , aes(x = `Day`, y = Ratio, color = GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG)) +
+  geom_line()+ 
+  labs(title ="nonsense mutations over time")+ theme( legend.position = "none")
+
+# Make sure the mutation column name is correct
+mutation_column <- "GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG"
+
+ggplot(recombined_500U_NonSyn_filtered, aes(x = `Day`, y = Ratio, group = `GAACAATCAGTGGATTATAGACATAAGTTCTCCTTGCCTAGTGTGGATGGaCAGAAACGCTACACGTTTCGTGTTCGGAGCCGCTTTAACCCACTCTGTGGAAGTGCTCAGCATTGGAGTGAATGGAGCCACCCAATCCACTGGGGaAGCAATACTTCAAAAG`, color = Mutation.type)) +
+  geom_line() +
+  labs(
+    title = "Nonsense and Synonymous Mutations Over Time 
+    (14 days/unselected)",
+    x = "Day",
+    y = "Log2(cell counts/HDRT lib)", 
+    color = "Mutation Type"
+  ) +
+  theme_minimal(base_size = 15) +  # Use a minimal theme as base
+  theme(
+    legend.position = "right",        # Position the legend
+    panel.grid.major = element_blank(),  # Remove major grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.title = element_text(size = 12), # Adjust axis title size
+    plot.title = element_text(hjust = 0.5) # Center align the title
+  )+
+  scale_x_continuous(limits = c(3, 14), breaks = c(3, 6, 9, 12, 14)) 
+
+
+
+
+#########restructuring the Donor plots over time 
+
+####donor 1
+
+Donor_1_3Day <- data_g_combined_Libp%>%select(-LogFC_29g, -LogFC_21g, -LogFC_13g)%>%mutate(Day = 3)%>%rename(Donor_1_FC= LogFC_5g)
+
+Donor_1_14Day <- data_g_combined_Libp%>%select(-LogFC_29g, -LogFC_5g, -LogFC_13g)%>%mutate(Day = 14)%>%rename(Donor_1_FC= LogFC_21g)
+
+Donor_1_3day_v_14Day<-rbind(Donor_1_3Day , Donor_1_14Day )
+Donor_1_3day_v_14Day_NonSyn_filtered<- Donor_1_3day_v_14Day%>%filter(Mutation.type == "Non"|Mutation.type == "Syn")
+  
+ggplot(Donor_1_3day_v_14Day , aes(x = `Day`, y = Donor_1_FC, color = HDRT)) +
+  geom_line()+ 
+  labs(
+    title = "Donor 1 Log FC over time")+theme( legend.position = "none")
+
+ggplot(Donor_1_3day_v_14Day_NonSyn_filtered , aes(x = `Day`, y = Donor_1_FC, group = `HDRT`, color = Mutation.type)) +
+  geom_line() +
+  labs(
+    title = "Donor 1 Log FC over time (Non/Syn)",
+    x = "Day",
+    y = "Log2(cell counts/HDRT lib)", 
+    color = "Mutation Type"
+  ) +
+  theme_minimal(base_size = 15) +  # Use a minimal theme as base
+  theme(
+    legend.position = "right",        # Position the legend
+    panel.grid.major = element_blank(),  # Remove major grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.title = element_text(size = 12), # Adjust axis title size
+    plot.title = element_text(hjust = 0.5) # Center align the title
+  )+
+  scale_x_continuous(limits = c(3, 14), breaks = c(3, 6, 9, 12, 14))  
+
+
+####donor 2
+
+Donor_2_3Day <- data_g_combined_Libp%>%select(-LogFC_29g, -LogFC_21g, -LogFC_5g)%>%mutate(Day = 3)%>%rename(Donor_2_FC= LogFC_13g)
+
+Donor_2_14Day <- data_g_combined_Libp%>%select(-LogFC_21g, -LogFC_5g, -LogFC_13g)%>%mutate(Day = 14)%>%rename(Donor_2_FC= LogFC_29g)
+
+Donor_2_3day_v_14Day<-rbind(Donor_2_3Day , Donor_2_14Day )
+Donor_2_3day_v_14Day_NonSyn_filtered<- Donor_2_3day_v_14Day%>%filter(Mutation.type == "Non"|Mutation.type == "Syn")
+  
+ggplot(Donor_2_3day_v_14Day , aes(x = `Day`, y = Donor_2_FC, group = `HDRT`, color = Mutation.type)) +
+  geom_line() +
+  labs(
+    title = "Donor 2 Log FC over time",
+    x = "Day",
+    y = "Log2(cell counts/HDRT lib)", 
+    color = "Mutation Type"
+  ) +
+  theme_minimal(base_size = 15) +  # Use a minimal theme as base
+  theme(
+    legend.position = "right",        # Position the legend
+    panel.grid.major = element_blank(),  # Remove major grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.title = element_text(size = 12), # Adjust axis title size
+    plot.title = element_text(hjust = 0.5) # Center align the title
+  )+
+  scale_x_continuous(limits = c(3, 14), breaks = c(3, 6, 9, 12, 14))  
+
+ggplot(Donor_2_3day_v_14Day_NonSyn_filtered , aes(x = `Day`, y = Donor_2_FC, group = `HDRT`, color = Mutation.type)) +
+  geom_line() +
+  labs(
+    title = "Donor 2 Log FC over time (Non/Syn)",
+    x = "Day",
+    y = "Log2(cell counts/HDRT lib)", 
+    color = "Mutation Type"
+  ) +
+  theme_minimal(base_size = 15) +  # Use a minimal theme as base
+  theme(
+    legend.position = "right",        # Position the legend
+    panel.grid.major = element_blank(),  # Remove major grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    axis.text = element_text(size = 10),  # Adjust axis text size
+    axis.title = element_text(size = 12), # Adjust axis title size
+    plot.title = element_text(hjust = 0.5) # Center align the title
+  )+
+  scale_x_continuous(limits = c(3, 14), breaks = c(3, 6, 9, 12, 14))  
+  
+```
+
+
