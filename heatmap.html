@@ -1920,6 +1920,160 @@ window.addEventListener("load", function() {
   var panel = document.getElementById("search-panel");
   document.body.style.paddingTop = panel.offsetHeight + "px";
 
+  function attachWheelListener() {
+    var plotDiv = document.querySelector(".plotly-graph-div");
+    if (!plotDiv || !plotDiv._fullLayout) {
+      setTimeout(attachWheelListener, 200);
+      return;
+    }
+
+    // Insert a wrapper div as the parent of plotDiv.
+    // This puts us in the DOM above plotDiv so capture:true fires first.
+    // Critically: a non-document element — passive:false is respected
+    // in both Chrome and Safari here, unlike window/document/body/html.
+    var wrapper = document.createElement("div");
+    wrapper.style.cssText = "width:100%;height:100%;display:block;";
+    plotDiv.parentNode.insertBefore(wrapper, plotDiv);
+    wrapper.appendChild(plotDiv);
+
+    var pendingShift = 0;
+    var rafPending   = false;
+
+    wrapper.addEventListener("wheel", function(e) {
+      // preventDefault now actually works — not forced passive
+      e.preventDefault();
+      // stopImmediatePropagation prevents capture from descending to plotDiv
+      // so Plotly never sees the wheel event at all
+      e.stopImmediatePropagation();
+
+      var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (e.deltaMode === 1) delta *= 30;
+      if (e.deltaMode === 2) delta *= 300;
+
+      pendingShift += delta;
+
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(function() {
+          var xRange  = plotDiv._fullLayout.xaxis.range.slice();
+          var visible = xRange[1] - xRange[0];
+          var shift   = (pendingShift / 100) * visible * 0.3;
+
+          Plotly.relayout(plotDiv, {
+            "xaxis.range[0]": xRange[0] + shift,
+            "xaxis.range[1]": xRange[1] + shift
+          });
+
+          pendingShift = 0;
+          rafPending   = false;
+        });
+      }
+
+    }, { passive: false, capture: true });
+  }
+
+  attachWheelListener();
+});
+</script>
+
+<script src="heatmap_data.js"></script>
+<script>
+function parseVariantID(q) {
+  var m = q.match(/^([A-Z*])(\d+)([A-Z*])$/i);
+  return m ? { wt: m[1].toUpperCase(), pos: parseInt(m[2]), mut: m[3].toUpperCase() } : null;
+}
+
+function searchVariant() {
+  var q      = document.getElementById("variantSearch").value.trim();
+  var out    = document.getElementById("searchResult");
+  var parsed = parseVariantID(q);
+
+  if (!parsed) {
+    out.innerHTML = "<span style='color:#dc3545;'>Use format: [WT amino acid][position][variant amino acid], e.g. Y204C</span>";
+    return;
+  }
+
+  var hits = searchData.filter(function(d) {
+    return d.AA_Position === parsed.pos &&
+           d.AminoAcid  && d.AminoAcid.toUpperCase() === parsed.mut &&
+           d.WT_AA      && d.WT_AA.toUpperCase()      === parsed.wt;
+  });
+
+  if (!hits.length) {
+    out.innerHTML = "<span style='color:#dc3545;'>No results found for <b>" + q + "</b></span>";
+    return;
+  }
+
+  var cards = hits.map(function(r) {
+    var score = (r.Score !== null && r.Score !== undefined) ? (+r.Score).toFixed(3) : "N/A";
+    return "<div style='display:inline-block;margin:4px 8px 4px 0;padding:10px 14px;" +
+           "background:white;border:1px solid #dee2e6;border-radius:6px;vertical-align:top;'>" +
+      "<b>DNA Position:</b> "   + r.DNA_Position  + "<br>" +
+      "<b>AA Position:</b> "    + r.AA_Position   + "<br>" +
+      "<b>Amino Acid:</b> "     + r.AminoAcid     + "<br>" +
+      "<b>Base:</b> "           + r.Base          + "<br>" +
+      "<b>Codon:</b> "          + r.Codon         + "<br>" +
+      "<b>Score:</b> "          + score           + "<br>" +
+      "<b>Mutation Type:</b> "  + r.Mutation_Type + "<br>" +
+      "<b>Database:</b> "       + (r.Database        || "N/A") + "<br>" +
+      "<b>Classification:</b> " + (r.Classification  || "N/A") +
+      "</div>";
+  }).join("");
+
+  out.innerHTML = "<div style='margin-bottom:8px;'><b>" +
+    hits.length + " result(s) for " + q + ":</b></div>" + cards;
+
+  var dna = hits.map(function(r) { return r.DNA_Position; });
+  var lo  = Math.min.apply(null, dna);
+  var hi  = Math.max.apply(null, dna);
+  var plotDiv = document.querySelector(".plotly-graph-div");
+  if (plotDiv) {
+    Plotly.relayout(plotDiv, { "xaxis.range": [lo - 15, hi + 15] });
+  }
+}
+
+function clearSearch() {
+  document.getElementById("variantSearch").value = "";
+  document.getElementById("searchResult").innerHTML = "";
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("variantSearch")
+    .addEventListener("keypress", function(e) {
+      if (e.key === "Enter") searchVariant();
+    });
+});
+</script>
+
+
+<div id="search-panel" style="position:fixed;top:0;left:0;right:0;z-index:9999;
+     padding:14px 18px;font-family:Arial,sans-serif;
+     background:#f8f9fa;border-bottom:2px solid #dee2e6;
+     box-shadow:0 2px 6px rgba(0,0,0,0.12);">
+  <strong style="font-size:15px;">Search variant:</strong>
+  <input id="variantSearch" type="text" placeholder="e.g. Y204C or Y204Y"
+         style="margin-left:8px;padding:6px 10px;font-size:14px;
+                border:1px solid #ced4da;border-radius:4px;width:220px;">
+  <button onclick="searchVariant()"
+          style="margin-left:6px;padding:6px 14px;font-size:14px;
+                 background:#2c7bb6;color:white;border:none;border-radius:4px;cursor:pointer;">
+    Search
+  </button>
+  <button onclick="clearSearch()"
+          style="margin-left:4px;padding:6px 14px;font-size:14px;
+                 background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;">
+    Clear
+  </button>
+  <div id="searchResult" style="margin-top:12px;font-size:13px;"></div>
+</div>
+
+<script>
+window.addEventListener("load", function() {
+
+  // Push plot below fixed search panel
+  var panel = document.getElementById("search-panel");
+  document.body.style.paddingTop = panel.offsetHeight + "px";
+
   var pendingShift = 0;
   var rafPending   = false;
 
