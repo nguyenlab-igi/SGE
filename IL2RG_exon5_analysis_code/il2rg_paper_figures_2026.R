@@ -20,110 +20,243 @@ non_wild_types_compact$border=NA
 colnames(wild_types_compact) = c("Score","Base","AminoAcid","DNA_Position","AA_Position","Text","Color","Border")
 colnames(non_wild_types_compact) = c("Score","Base","AminoAcid","DNA_Position","AA_Position","Text","Color","Border")
 heatmap_df = as.data.frame(rbind(rbind(non_wild_types_compact,wild_types_compact)))
-heatmap_df_part1 = heatmap_df[which(heatmap_df$DNA_Position<=679),] #717 originally
+# heatmap_df_part1 = heatmap_df[which(heatmap_df$DNA_Position<=679),] #717 originally
+# heatmap_df_part1$Base <- as.factor(heatmap_df_part1$Base)
+# aa_positions_df = heatmap_df_part1[order(heatmap_df_part1$DNA_Position),c(1,4,5)]
+# aa_positions_subset <- aa_positions_df[seq(1, nrow(aa_positions_df), by = 60), ]
+# # Extract wild-type base positions for annotation
+# wild_type_labels <- wild_types_compact[, c("Base", "DNA_Position","Score")]
+# 
+# wild_type_labels <- unique(wild_type_labels)  # Remove duplicates
+# #pam changes
+# 
+# wild_type_labels$y_position <- max(as.numeric(factor(wild_type_labels$Base))) + 1
+# wild_type_labels$Base[which(wild_type_labels$DNA_Position==645)] = "G^"
+# wild_type_labels$Base[which(wild_type_labels$DNA_Position==741)] = "G^"
+# # Adjust y-position to place text above the heatmap
+# wild_type_labels_part1 = wild_type_labels[which(wild_type_labels$DNA_Position<=679),]
+# 
+# #library(showtext)
+# #font_add_google("Arial") # Arimo is a metrically compatible alternative
+# #showtext_auto()
+# 
+# ggplot(heatmap_df_part1, aes(x = DNA_Position, y = Base, fill = Score)) +
+#   geom_tile(aes(colour = as.factor(Border)), linewidth = 0.5) +
+#   geom_text(aes(label = AminoAcid,fontface=Text), colour=heatmap_df_part1$Color,size = 25/.pt) +
+#   #scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 1.5, 
+#   #                     name = "Score") +
+#   scale_fill_gradientn(
+#     colors = c("red","white", "lightblue", "blue"),
+#     values = c(0,0.4, 0.75, 0.9, 1),  # -2 → 0, 0 → 0.5, 0.75 → 0.6875, 2 → 1
+#     limits = c(-2.5, 2),
+#     oob = scales::squish,
+#     name = "Score"
+#   ) +
+#   scale_colour_identity() +
+#   labs(x = "Position", y = "Base Change") +
+#   geom_text(
+#     data = aa_positions_subset,
+#     aes(x = DNA_Position, y = max(as.numeric(heatmap_df_part1$Base)) + 0.95, label = AA_Position),
+#     vjust = 2, size =8, color = "black", fontface="italic"
+#   ) +coord_cartesian(clip="off") +
+#   scale_y_discrete(expand = expansion(mult = c(0.1, 0.4)))  +
+#   
+#   geom_text(
+#     data = wild_type_labels_part1,
+#     aes(x = DNA_Position, label = Base,y=0),  # Removed y aesthetic from aes()
+#     vjust = 0, size = 21/.pt, fontface = "bold", color = "black"
+#   ) +
+#   theme_void() +guides(fill = guide_colorbar(barwidth = 1, barheight = 10)) +
+#   theme(
+#     plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+#     axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10),),
+#     axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10),angle = 90),
+#     axis.text = element_text(size = 25,face="bold"), legend.title = element_text(size=25,face="bold",margin = margin(b = 20)),legend.text = element_text(size=25,face="bold")
+#   )
+# 
+# #ggsave("heatmap_bigger_font.pdf",device = "pdf",width=32,height=7)
+# #ggsave("heatmap_all_variants_top_12226.eps",device = "eps",width=30,height=5)
+# ggsave("heatmap_all_variants_top_42226.pdf",device = "pdf",width=32,height=7)
+# ggsave("heatmap_all_variants_top_42226.eps",device = "eps",width=32,height=7)
+# 
+# 
+# heatmap_df_part2 = heatmap_df[which(heatmap_df$DNA_Position>679),]
+# heatmap_df_part2$Base <- as.factor(heatmap_df_part2$Base)
+# aa_positions_df = heatmap_df_part2[order(heatmap_df_part2$DNA_Position),c(1,4,5)]
+# aa_positions_subset <- aa_positions_df[seq(1, nrow(aa_positions_df), by = 60), ]
+# wild_type_labels_part2 = wild_type_labels[which(wild_type_labels$DNA_Position>679),]
+# 
+# ggplot(heatmap_df_part2, aes(x = DNA_Position, y = Base, fill = Score)) +
+#   geom_tile(aes(colour = as.factor(Border)), linewidth = 0.5) +
+#   geom_text(aes(label = AminoAcid,fontface=Text), colour=heatmap_df_part2$Color,size = 25/.pt) +
+#   #scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 1.5, 
+#   #                     name = "Score") +
+#   scale_fill_gradientn(
+#     colors = c("red","white", "lightblue", "blue"),
+#     values = c(0,0.4, 0.75, 0.9, 1),  # -2 → 0, 0 → 0.5, 0.75 → 0.6875, 2 → 1
+#     limits = c(-2.5, 2),
+#     oob = scales::squish,
+#     name = "Score"
+#   ) +
+#   scale_colour_identity() +
+#   labs(x = "Position", y = "Base Change") +
+#   geom_text(
+#     data = aa_positions_subset,
+#     aes(x = DNA_Position, y = max(as.numeric(heatmap_df_part2$Base)) + 0.95, label = AA_Position),
+#     vjust = 2, size =8, color = "black", fontface="italic"
+#   ) +coord_cartesian(clip="off") +
+#   scale_y_discrete(expand = expansion(mult = c(0.1, 0.4)))  +
+#   
+#   geom_text(
+#     data = wild_type_labels_part2,
+#     aes(x = DNA_Position, label = Base,y=0),  # Removed y aesthetic from aes()
+#     vjust = 0, size = 21/.pt, fontface = "bold", color = "black"
+#   ) +
+#   theme_void() +guides(fill = guide_colorbar(barwidth = 1, barheight = 10)) +
+#   theme(
+#     plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+#     axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10),),
+#     axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10),angle = 90),
+#     axis.text = element_text(size = 25,face="bold"), legend.title = element_text(size=25,face="bold",margin = margin(b = 20)),legend.text = element_text(size=25,face="bold")
+#   )
+# 
+# #ggsave("heatmap_all_variants_bottom_12226.pdf",device = "pdf",width=30,height=5)
+# #ggsave("heatmap_all_variants_bottom_12226.eps",device = "eps",width=30,height=5)
+# ggsave("heatmap_all_variants_bottom_42226.pdf",device = "pdf",width=32,height=7)
+# ggsave("heatmap_all_variants_bottom_42226.eps",device = "eps",width=32,height=7)
+
+library(ggplot2)
+library(dplyr)
+library(ggtext)
+library(scales)
+library(showtext)
+
+# 1. Turn off showtext for native PDF vector font embedding
+showtext_auto(FALSE)
+
+# 2. Set Arial as the default family for ALL geom_text() calls
+update_geom_defaults("text", list(family = "Arial"))
+# ==========================================
+# PART 1: TOP HEATMAP (Positions <= 679)
+# ==========================================
+
+# Explicitly subset Part 1 data
+heatmap_df_part1 <- heatmap_df %>% filter(DNA_Position <= 679)
 heatmap_df_part1$Base <- as.factor(heatmap_df_part1$Base)
-aa_positions_df = heatmap_df_part1[order(heatmap_df_part1$DNA_Position),c(1,4,5)]
-aa_positions_subset <- aa_positions_df[seq(1, nrow(aa_positions_df), by = 60), ]
-# Extract wild-type base positions for annotation
-wild_type_labels <- wild_types_compact[, c("Base", "DNA_Position","Score")]
 
-wild_type_labels <- unique(wild_type_labels)  # Remove duplicates
-#pam changes
+wild_type_labels_part1 <- wild_type_labels %>% filter(DNA_Position <= 679)
 
-wild_type_labels$y_position <- max(as.numeric(factor(wild_type_labels$Base))) + 1
-wild_type_labels$Base[which(wild_type_labels$DNA_Position==645)] = "G^"
-wild_type_labels$Base[which(wild_type_labels$DNA_Position==741)] = "G^"
-# Adjust y-position to place text above the heatmap
-wild_type_labels_part1 = wild_type_labels[which(wild_type_labels$DNA_Position<=679),]
+aa_positions_df_part1 <- heatmap_df_part1[order(heatmap_df_part1$DNA_Position), c(1, 4, 5)]
+aa_positions_subset_part1 <- aa_positions_df_part1[seq(1, nrow(aa_positions_df_part1), by = 60), ]
 
-#library(showtext)
-#font_add_google("Arial") # Arimo is a metrically compatible alternative
-#showtext_auto()
+heatmap_df_part1_edit <- heatmap_df_part1
+heatmap_df_part1_edit$Score[which(heatmap_df_part1_edit$Border == "black")] <- NA
 
-ggplot(heatmap_df_part1, aes(x = DNA_Position, y = Base, fill = Score)) +
+heatmap_df_part1_edit <- heatmap_df_part1_edit %>%
+  mutate(
+    plotmath_label = case_when(
+      Text == "bold" ~ paste0("bold(underline('", AminoAcid, "'))"),
+      TRUE          ~ paste0("'", AminoAcid, "'")
+    )
+  )
+
+p_top <- ggplot(heatmap_df_part1_edit, aes(x = DNA_Position, y = Base, fill = Score)) +
   geom_tile(aes(colour = as.factor(Border)), linewidth = 0.5) +
-  geom_text(aes(label = AminoAcid,fontface=Text), colour=heatmap_df_part1$Color,size = 25/.pt) +
-  #scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 1.5, 
-  #                     name = "Score") +
+  geom_text(aes(label = plotmath_label, color = Color), parse = TRUE, size = 25 / .pt, family = "Arial") +
   scale_fill_gradientn(
-    colors = c("red","white", "lightblue", "blue"),
-    values = c(0,0.4, 0.75, 0.9, 1),  # -2 → 0, 0 → 0.5, 0.75 → 0.6875, 2 → 1
-    limits = c(-2.5, 2),
-    oob = scales::squish,
-    name = "Score"
+    colors = alpha(c("firebrick4", "tomato1", "white", "lightblue", "navy"), 0.75),
+    values = scales::rescale(c(min(heatmap_df$Score, na.rm = TRUE), -1.5, -1.15, -0.8, max(heatmap_df$Score, na.rm = TRUE))),
+    limits = c(min(heatmap_df$Score, na.rm = TRUE), max(heatmap_df$Score, na.rm = TRUE)),
+    name = "Score",
+    na.value = "grey80"
   ) +
   scale_colour_identity() +
   labs(x = "Position", y = "Base Change") +
   geom_text(
-    data = aa_positions_subset,
+    data = aa_positions_subset_part1,
     aes(x = DNA_Position, y = max(as.numeric(heatmap_df_part1$Base)) + 0.95, label = AA_Position),
-    vjust = 2, size =8, color = "black", fontface="italic"
-  ) +coord_cartesian(clip="off") +
-  scale_y_discrete(expand = expansion(mult = c(0.1, 0.4)))  +
-  
+    vjust = 2, size = 8, color = "black", fontface = "italic", family = "Arial"
+  ) + # FIXED: Added missing '+' here to keep wild_type_labels_part1 attached
+  coord_cartesian(clip = "off") +
+  scale_y_discrete(expand = expansion(mult = c(0.1, 0.4))) +
   geom_text(
     data = wild_type_labels_part1,
-    aes(x = DNA_Position, label = Base,y=0),  # Removed y aesthetic from aes()
-    vjust = 0, size = 21/.pt, fontface = "bold", color = "black"
+    aes(x = DNA_Position, label = Base, y = 0),
+    vjust = 0, size = 21 / .pt, fontface = "bold", color = "black", family="Arial"
   ) +
-  theme_void() +guides(fill = guide_colorbar(barwidth = 1, barheight = 10)) +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
-    axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10),),
-    axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10),angle = 90),
-    axis.text = element_text(size = 25,face="bold"), legend.title = element_text(size=25,face="bold",margin = margin(b = 20)),legend.text = element_text(size=25,face="bold")
+  theme_void() +
+  guides(fill = guide_colorbar(barwidth = 1, barheight = 10)) +
+  theme(text = element_text(family = "Arial"),
+        plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+        axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10)),
+        axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10), angle = 90),
+        axis.text = element_text(size = 25, face = "bold"),
+        legend.title = element_text(size = 25, face = "bold", margin = margin(b = 20)),
+        legend.text = element_text(size = 25, face = "bold")
   )
 
-#ggsave("heatmap_bigger_font.pdf",device = "pdf",width=32,height=7)
-#ggsave("heatmap_all_variants_top_12226.eps",device = "eps",width=30,height=5)
-ggsave("heatmap_all_variants_top_42226.pdf",device = "pdf",width=32,height=7)
-ggsave("heatmap_all_variants_top_42226.eps",device = "eps",width=32,height=7)
+ggsave("heatmap_top_rebalance_color_uncapped_v9.51.pdf", plot = p_top, device = cairo_pdf, width = 32, height = 7)
 
 
-heatmap_df_part2 = heatmap_df[which(heatmap_df$DNA_Position>679),]
+# ==========================================
+# PART 2: BOTTOM HEATMAP (Positions > 679)
+# ==========================================
+
+heatmap_df_part2 <- heatmap_df %>% filter(DNA_Position > 679)
 heatmap_df_part2$Base <- as.factor(heatmap_df_part2$Base)
-aa_positions_df = heatmap_df_part2[order(heatmap_df_part2$DNA_Position),c(1,4,5)]
-aa_positions_subset <- aa_positions_df[seq(1, nrow(aa_positions_df), by = 60), ]
-wild_type_labels_part2 = wild_type_labels[which(wild_type_labels$DNA_Position>679),]
 
-ggplot(heatmap_df_part2, aes(x = DNA_Position, y = Base, fill = Score)) +
+wild_type_labels_part2 <- wild_type_labels %>% filter(DNA_Position > 679)
+
+aa_positions_df_part2 <- heatmap_df_part2[order(heatmap_df_part2$DNA_Position), c(1, 4, 5)]
+aa_positions_subset_part2 <- aa_positions_df_part2[seq(1, nrow(aa_positions_df_part2), by = 60), ]
+
+heatmap_df_part2_edit <- heatmap_df_part2
+heatmap_df_part2_edit$Score[which(heatmap_df_part2_edit$Border == "black")] <- NA
+
+heatmap_df_part2_edit <- heatmap_df_part2_edit %>%
+  mutate(
+    plotmath_label = case_when(
+      Text == "bold" ~ paste0("bold(underline('", AminoAcid, "'))"),
+      TRUE          ~ paste0("'", AminoAcid, "'")
+    )
+  )
+
+p_bottom <- ggplot(heatmap_df_part2_edit, aes(x = DNA_Position, y = Base, fill = Score)) +
   geom_tile(aes(colour = as.factor(Border)), linewidth = 0.5) +
-  geom_text(aes(label = AminoAcid,fontface=Text), colour=heatmap_df_part2$Color,size = 25/.pt) +
-  #scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 1.5, 
-  #                     name = "Score") +
+  geom_text(aes(label = plotmath_label, color = Color), parse = TRUE, size = 25 / .pt,family = "Arial") +
   scale_fill_gradientn(
-    colors = c("red","white", "lightblue", "blue"),
-    values = c(0,0.4, 0.75, 0.9, 1),  # -2 → 0, 0 → 0.5, 0.75 → 0.6875, 2 → 1
-    limits = c(-2.5, 2),
-    oob = scales::squish,
-    name = "Score"
+    colors = alpha(c("firebrick4", "tomato1", "white", "lightblue", "navy"), 0.75),
+    values = scales::rescale(c(min(heatmap_df$Score, na.rm = TRUE), -1.5, -1.15, -0.8, max(heatmap_df$Score, na.rm = TRUE))),
+    limits = c(min(heatmap_df$Score, na.rm = TRUE), max(heatmap_df$Score, na.rm = TRUE)),
+    name = "Score",
+    na.value = "grey80"
   ) +
   scale_colour_identity() +
   labs(x = "Position", y = "Base Change") +
   geom_text(
-    data = aa_positions_subset,
+    data = aa_positions_subset_part2,
     aes(x = DNA_Position, y = max(as.numeric(heatmap_df_part2$Base)) + 0.95, label = AA_Position),
-    vjust = 2, size =8, color = "black", fontface="italic"
-  ) +coord_cartesian(clip="off") +
-  scale_y_discrete(expand = expansion(mult = c(0.1, 0.4)))  +
-  
+    vjust = 2, size = 8, color = "black", fontface = "italic",family = "Arial"
+  ) +
+  coord_cartesian(clip = "off") +
+  scale_y_discrete(expand = expansion(mult = c(0.1, 0.4))) +
   geom_text(
     data = wild_type_labels_part2,
-    aes(x = DNA_Position, label = Base,y=0),  # Removed y aesthetic from aes()
-    vjust = 0, size = 21/.pt, fontface = "bold", color = "black"
+    aes(x = DNA_Position, label = Base, y = 0),
+    vjust = 0, size = 21 / .pt, fontface = "bold", color = "black", family = "Arial"
   ) +
-  theme_void() +guides(fill = guide_colorbar(barwidth = 1, barheight = 10)) +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
-    axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10),),
-    axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10),angle = 90),
-    axis.text = element_text(size = 25,face="bold"), legend.title = element_text(size=25,face="bold",margin = margin(b = 20)),legend.text = element_text(size=25,face="bold")
+  theme_void() +
+  guides(fill = guide_colorbar(barwidth = 1, barheight = 10)) +
+  theme(text = element_text(family = "Arial"),
+        plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+        axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10)),
+        axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10), angle = 90),
+        axis.text = element_text(size = 25, face = "bold"),
+        legend.title = element_text(size = 25, face = "bold", margin = margin(b = 20)),
+        legend.text = element_text(size = 25, face = "bold")
   )
 
-#ggsave("heatmap_all_variants_bottom_12226.pdf",device = "pdf",width=30,height=5)
-#ggsave("heatmap_all_variants_bottom_12226.eps",device = "eps",width=30,height=5)
-ggsave("heatmap_all_variants_bottom_42226.pdf",device = "pdf",width=32,height=7)
-ggsave("heatmap_all_variants_bottom_42226.eps",device = "eps",width=32,height=7)
+ggsave("heatmap_bottom_rebalance_color_uncapped_v9.51.pdf", plot = p_bottom, device = cairo_pdf, width = 32, height = 7)
 
 
 
@@ -496,7 +629,7 @@ screen_w_cadd$ClinVar = factor(screen_w_cadd$ClinVar,levels = c("Benign","Likely
 
 ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=PHRED)) + geom_point(aes(color = ClinVar), size = 4, alpha = 0.8) +
   scale_color_manual(values = mutation_colors) +
-  labs(x = "Screen Score", y = "CADD Score", title = "") +  # Add title
+  labs(x = "Screen Score", y = "CADD Score", title = "",caption="r=-0.60; rho=-0.63") +  # Add title
   theme_minimal(base_size = 7.5) +
   #geom_smooth(method = "loess", formula = y ~ x, color = "blue", se = FALSE,size=0.5) +
   theme(
@@ -507,16 +640,16 @@ ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=PHRED)) + geom_point(aes(color =
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.ticks = element_line(colour = "black"),legend.title=element_blank(), legend.position = "none"
+    axis.ticks = element_line(colour = "black"),legend.title=element_blank(), legend.position = "none",plot.caption = element_text(hjust = 0.5, size = 20, face = "italic", margin = margin(t = 10))
   ) 
-ggsave("fig2a_compare_to_cadd_12226.pdf",dev="pdf",width=5,height=5)
-ggsave("fig2a_compare_to_cadd_12226.eps",dev="eps",width=5,height=5)
-ggsave("fig2a_compare_to_cadd_12226.png",dev="png")
+ggsave("fig2a_compare_to_cadd_81026.pdf",dev="pdf",width=5,height=5)
+ggsave("fig2a_compare_to_cadd_81026.eps",dev="eps",width=5,height=5)
+#ggsave("fig2a_compare_to_cadd_12226.png",dev="png")
 
 
 ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=EsmScoreMissense)) + geom_point(aes(color = ClinVar), size = 4, alpha = 0.8) +
   scale_color_manual(values = mutation_colors) +
-  labs(x = "Screen Score", y = "ESM1b Score", title = "") +  # Add title
+  labs(x = "Screen Score", y = "ESM1b Score", title = "",caption="r=0.75; rho=0.62") +  # Add title
   theme_minimal(base_size = 7.5) +
   #geom_smooth(method = "loess", formula = y ~ x, color = "blue", se = FALSE,size=0.5) +
   theme(
@@ -527,11 +660,12 @@ ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=EsmScoreMissense)) + geom_point(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.ticks = element_line(colour = "black"),legend.title=element_blank(), legend.position = "none"
+    axis.ticks = element_line(colour = "black"),legend.title=element_blank(), legend.position = "none",
+    plot.caption = element_text(hjust = 0.5, size = 20, face = "italic", margin = margin(t = 10))
   ) 
-ggsave("fig2a_compare_to_esm_12226.pdf",dev="pdf",width=5,height=5)
-ggsave("fig2a_compare_to_esm_12226.eps",dev="eps",width=5,height=5)
-ggsave("fig2a_compare_to_esm_11426.png",dev="png")
+ggsave("fig2a_compare_to_esm_81026.pdf",dev="pdf",width=5,height=5)
+ggsave("fig2a_compare_to_esm_81026.eps",dev="eps",width=5,height=5)
+#ggsave("fig2a_compare_to_esm_11426.png",dev="png")
 
 
 
@@ -548,7 +682,8 @@ am_plot = ggplot(screen_w_cadd_and_am,aes(x=new_score_gdna_avg,y=am_pathogenicit
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.ticks = element_line(colour = "black"),legend.title=element_blank()
+    axis.ticks = element_line(colour = "black"),legend.title=element_blank(),
+    plot.caption = element_text(hjust = 0.5, size = 20, face = "italic", margin = margin(t = 10))
   ) 
 
 
@@ -559,7 +694,7 @@ ggsave("fig2a_legend.eps",dev="eps")
 
 ggplot(screen_w_cadd_and_am,aes(x=new_score_gdna_avg,y=am_pathogenicity)) + geom_point(aes(color = ClinVar), size = 4, alpha = 0.8) +
   scale_color_manual(values = mutation_colors) +
-  labs(x = "Screen Score", y = "AlphaMissense Score", title = "") +  # Add title
+  labs(x = "Screen Score", y = "AlphaMissense Score", title = "",caption="r=-0.68; rho=-0.57") +  # Add title
   #geom_smooth(method = "loess", formula = y ~ x, color = "blue", se = FALSE,size=0.5) +
   theme_minimal(base_size = 7.5) +
   theme(
@@ -570,11 +705,12 @@ ggplot(screen_w_cadd_and_am,aes(x=new_score_gdna_avg,y=am_pathogenicity)) + geom
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.ticks = element_line(colour = "black"),legend.position="none",legend.title=element_blank()
+    axis.ticks = element_line(colour = "black"),legend.position="none",legend.title=element_blank(),
+    plot.caption = element_text(hjust = 0.5, size = 20, face = "italic", margin = margin(t = 10))
   ) 
-ggsave("fig2a_compare_to_am_12226.pdf",dev="pdf",width=5,height=5)
-ggsave("fig2a_compare_to_am_12226.eps",dev="eps",width=5,height=5)
-ggsave("fig2a_compare_to_am_12226.png",dev="png",width=10,height=10)
+ggsave("fig2a_compare_to_am_81026.pdf",dev="pdf",width=5,height=5)
+ggsave("fig2a_compare_to_am_81026.eps",dev="eps",width=5,height=5)
+#ggsave("fig2a_compare_to_am_12226.png",dev="png",width=10,height=10)
 
 ### validation!
 library(dplyr)
@@ -713,7 +849,7 @@ for (v in variants_round2) {
   subset["ratio"] = subset[v]/subset$H236H/init_ratio
   subset_to_use = subset[grep('HDRT|DP|DN|B|_M|NK',rownames(subset)),]
   plotting_df = data.frame(category=sapply(strsplit(rownames(subset_to_use), "_"), "[", 2), value=subset_to_use$ratio)
-  plotting_df$category[1] = "HDRT"
+  plotting_df$category[1] = "HDRT Mix"
   plotting_df$variant = rep(v,nrow(plotting_df))
   big_table = rbind(big_table,plotting_df)
 }
@@ -724,7 +860,7 @@ for (v in variants_round1) {
   subset["ratio"] = subset[v]/subset$H236H/init_ratio
   subset_to_use = subset[grep('HDRT|DP|DN|B|_M|NK',rownames(subset)),]
   plotting_df = data.frame(category=sapply(strsplit(rownames(subset_to_use), "_"), "[", 3), value=subset_to_use$ratio)
-  plotting_df$category[1] = "HDRT"
+  plotting_df$category[1] = "HDRT Mix"
   plotting_df$variant = rep(v,nrow(plotting_df))
   big_table = rbind(big_table,plotting_df)
 }
@@ -736,7 +872,7 @@ big_table$category[which(big_table$category=="M")] = "CD33+"
 big_table$category[which(big_table$category=="NK")] = "CD56+"
 big_table$category[which(big_table$category=="DP")] = "CD5+/CD7+ T"
 big_table$category[which(big_table$category=="DN")] = "CD5-/CD7- T"
-big_table$category = factor(big_table$category,levels = c("HDRT","CD5+/CD7+ T",
+big_table$category = factor(big_table$category,levels = c("HDRT Mix","CD5+/CD7+ T",
                                                           "CD5-/CD7- T","CD19+","CD33+","CD56+"))
 big_table$variant = factor(big_table$variant,levels = c("R226H","R222C","G232R",
                                                         "S238R","T220P","R222G","A234P","I244N",
@@ -764,7 +900,7 @@ ggplot(big_table, aes(x = variant, y = category, fill = value)) +
 ggsave("hsc_differentiation_all_conditions_32825.pdf",dev="pdf",width=10)
 ggsave("hsc_differentiation_all_conditions_32825.eps",dev="pdf",width=10)
 
-big_table_for_paper = big_table[which(big_table$category %in% c("HDRT","CD5+/CD7+ T","CD19+")),]
+big_table_for_paper = big_table[which(big_table$category %in% c("HDRT Mix","CD5+/CD7+ T","CD19+")),]
 ggplot(big_table_for_paper, aes(x = variant, y = category, fill = value)) +
   geom_tile() + 
   #scale_fill_gradient(low = "white", high = "black") +  # Grayscale gradient
@@ -808,28 +944,109 @@ big_table_for_paper$numbering[which(big_table_for_paper$numbering=="G232R")] = 1
 #big_table_for_paper$numbering = factor(big_table_for_paper$numbering,levels = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14))
 big_table_for_paper$numbering = factor(big_table_for_paper$numbering,levels = c(14,13,12,11,10,9,8,7,6,5,4,3,2,1))
 ggplot(big_table_for_paper, aes(x = category, y = numbering, fill = value)) +
-  geom_tile() + 
+  geom_tile() + #return this into geom tile if you want the borders around cells: color = "grey90",linewidth = 0.5
   #scale_fill_gradient(low = "white", high = "black") +  # Grayscale gradient
   scale_fill_gradientn(
-    colors = c("white", "black"),  # White to black gradient
-    values = c(0, 1.25),       # Define stops in data range
-    limits = c(0, 1.25),            # Clamp values at 1.5
-    oob = scales::squish           # Anything above 1.5 stays black
-  ) +
-  
-  theme_minimal() +
+     colors = c("white", "black"),  # White to black gradient
+     values = c(0, 1.25),       # Define stops in data range
+     limits = c(0, 1.25),
+     breaks = seq(0, 1.5, by = 0.25),
+     # Clamp values at 1.5
+     oob = scales::squish           # Anything above 1.5 stays black
+   ) +
+  #scale_fill_gradientn(
+  #  colors = c("firebrick", "white", "dodgerblue"),
+  #  values = scales::rescale(c(0, 1, 1.25)),
+  #  limits = c(0, 1.25),
+  #  oob = scales::squish
+  #)+
+  theme_minimal(base_family = "Arial") +
   labs(title = "",
        x = "Cell Type",
        y = "Variant",
-       fill = "Ratio") +
+       fill = "Ratio\nVariant:H236H") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1,size=25,face="bold"),
         axis.text.y = element_text(angle = 0, hjust = 1,size=25,face="bold"),
         axis.title.x = element_text(size = 25, face="bold"),
         axis.title.y = element_text(size = 25,face="bold"),
-        legend.text=element_text(size=20,face="bold"),legend.title=element_text(size=20,face="bold"))
-ggsave("fig2d_hsc_differentiation_three_conditions_12226.pdf",dev="pdf",width=5,height=10)
-ggsave("fig2d_hsc_differentiation_three_conditions_12226.eps",dev="pdf",width=5,height=10)
-ggsave("fig2d_hsc_differentiation_three_conditions_12226.png",dev="png",width=3)
+        legend.text=element_text(size=15,face="bold"),legend.title=element_text(size=17,face="bold"))
+#ggsave("fig2d_hsc_differentiation_three_conditions_12226.pdf",dev="pdf",width=5,height=10)
+#ggsave("fig2d_hsc_differentiation_three_conditions_12226.eps",dev="pdf",width=5,height=10)
+#ggsave("fig2d_hsc_differentiation_three_conditions_12226.png",dev="png",width=3)
+#ggsave("fig2d_hsc_differentiation_bluered_5126.pdf",dev="pdf",width=5,height=10)
+ggsave("hsc_differentiation_heatmap_sep2026.pdf",dev="pdf",width=5,height=10)
+
+
+#remove numbering
+big_table_for_paper$variant = factor(big_table_for_paper$variant,levels = rev(c("R226H","R222C","G232R",
+                                                        "S238R","T220P","R222G","A234P","I244N",
+                                                        "A234A","T220M","I244V","S233T",
+                                                        "V223I","P211R")))
+
+ggplot(big_table_for_paper, aes(x = category, y = variant, fill = value)) +
+  geom_tile() + #return this into geom tile if you want the borders around cells: color = "grey90",linewidth = 0.5
+  #scale_fill_gradient(low = "white", high = "black") +  # Grayscale gradient
+  scale_fill_gradientn(
+    colors = c("white", "black"),  # White to black gradient
+    values = c(0, 1.25),       # Define stops in data range
+    limits = c(0, 1.25),
+    breaks = seq(0, 1.5, by = 0.25),
+    # Clamp values at 1.5
+    oob = scales::squish           # Anything above 1.5 stays black
+  ) +
+  #scale_fill_gradientn(
+  #  colors = c("firebrick", "white", "dodgerblue"),
+  #  values = scales::rescale(c(0, 1, 1.25)),
+  #  limits = c(0, 1.25),
+  #  oob = scales::squish
+  #)+
+  theme_minimal(base_family = "Arial") +
+  labs(title = "",
+       x = "Cell Type",
+       y = "Variant",
+       fill = "Ratio\nVariant:H236H") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1,size=25,face="bold"),
+        axis.text.y = element_text(angle = 0, hjust = 1,size=25,face="bold"),
+        axis.title.x = element_text(size = 25, face="bold"),
+        axis.title.y = element_text(size = 25,face="bold"),
+        legend.text=element_text(size=15,face="bold"),legend.title=element_text(size=17,face="bold"))
+
+ggsave("hsc_differentiation_heatmap_sep2026_no_numbering2.pdf",dev="pdf",width=5,height=10)
+
+
+
+## dot attempt
+ggplot(big_table_for_paper, aes(x = category, y = numbering)) +
+  # Use geom_point instead of geom_tile; size scales with the value
+  geom_point(aes(size = value, color = value), stroke = 1.5) +
+
+  # Re-use our custom non-linear color gradient
+  scale_color_gradientn(
+    colors = c("#b2182b", "#ef8a62", "#f7f7f7", "#2166ac"),
+    values = scales::rescale(c(0, 0.4, 0.75, 1.0, 1.25)),
+    limits = c(0, 1.25),
+    oob = scales::squish
+  ) +
+  
+  # Control how small the zeroes get and how large the 1.25s get
+  scale_size_continuous(range = c(2, 10), guide = "none") +  
+  scale_x_discrete(expand = expansion(mult = c(0.2, 0.2))) +
+  
+  
+  theme_bw() + # A light border box helps anchor the floating dots
+  labs(x = "Cell Type", y = "Variant", color = "Ratio") +
+  theme(
+    aspect.ratio = 3.5,
+    panel.grid.major = element_line(color = "grey95"),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 20, face = "bold", color = "black"),
+    axis.text.y = element_text(size = 20, face = "bold", color = "black"),
+    axis.title.x = element_text(size = 22, face = "bold"),
+    axis.title.y = element_text(size = 22, face = "bold"),
+    legend.text = element_text(size = 16, face = "bold"),
+    legend.title = element_text(size = 16, face = "bold")
+  )
+ggsave("hsc_differentiation_dot_52626.pdf",dev="pdf",width=5,height=10)
 
 
 

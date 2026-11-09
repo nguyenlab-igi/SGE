@@ -352,48 +352,94 @@ mutation_colors <- c(
   "Unclassified" = "lightgrey") 
 
 
+# ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=PolyPhenVal)) + geom_point(aes(color = ClinVar), size = 4, alpha = 0.8) +
+#   scale_color_manual(values = mutation_colors) +
+#   labs(x = "Screen Score", y = "PolyPhen Score", title = "") +  # Add title
+#   theme_minimal(base_size = 7.5) +
+#   #geom_smooth(method = "loess", formula = y ~ x, color = "blue", se = FALSE,size=0.5) +
+#   theme(
+#     plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+#     axis.title.x = element_text(size = 20, face = "bold", margin = margin(t = 10)),
+#     axis.title.y = element_text(size = 20, face = "bold", margin = margin(r = 10)),
+#     axis.text = element_text(size = 15,face="bold"), legend.text = element_text(size=10),
+#     panel.grid.major = element_blank(),
+#     panel.grid.minor = element_blank(),
+#     axis.line = element_line(colour = "black"),
+#     axis.ticks = element_line(colour = "black"),legend.title=element_blank()
+#   ) 
+# 
+# ggsave("figs4_compare_to_polyphen_42226.pdf",device = "pdf")
+
 ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=PolyPhenVal)) + geom_point(aes(color = ClinVar), size = 4, alpha = 0.8) +
   scale_color_manual(values = mutation_colors) +
-  labs(x = "Screen Score", y = "PolyPhen Score", title = "") +  # Add title
+  labs(x = "Screen Score", y = "PolyPhen Score", title = "",caption="r=-0.46; rho=-0.41") +  # Add title
   theme_minimal(base_size = 7.5) +
   #geom_smooth(method = "loess", formula = y ~ x, color = "blue", se = FALSE,size=0.5) +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
-    axis.title.x = element_text(size = 20, face = "bold", margin = margin(t = 10)),
-    axis.title.y = element_text(size = 20, face = "bold", margin = margin(r = 10)),
-    axis.text = element_text(size = 15,face="bold"), legend.text = element_text(size=10),
+    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+    axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10)),
+    axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10)),
+    axis.text = element_text(size = 20,face="bold"), legend.text = element_text(size=15),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.ticks = element_line(colour = "black"),legend.title=element_blank()
+    axis.ticks = element_line(colour = "black"),legend.title=element_blank(), legend.position = "none",
+    plot.caption = element_text(hjust = 0.5, size = 20, face = "italic", margin = margin(t = 10))
   ) 
+ggsave("fig2a_compare_to_polyphen_81726.pdf",dev="pdf",width=5,height=5)
+ggsave("fig2a_compare_to_polyphen_81726.eps",dev="eps",width=5,height=5)
 
-ggsave("figs4_compare_to_polyphen_42226.pdf",device = "pdf")
+
+# ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=SIFTval)) + geom_point(aes(color = ClinVar), size = 4, alpha = 0.8) +
+#   scale_color_manual(values = mutation_colors) +
+#   labs(x = "Screen Score", y = "SIFT Score", title = "") +  # Add title
+#   theme_minimal(base_size = 7.5) +
+#   #geom_smooth(method = "loess", formula = y ~ x, color = "blue", se = FALSE,size=0.5) +
+#   theme(
+#     plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+#     axis.title.x = element_text(size = 20, face = "bold", margin = margin(t = 10)),
+#     axis.title.y = element_text(size = 20, face = "bold", margin = margin(r = 10)),
+#     axis.text = element_text(size = 15,face="bold"), legend.text = element_text(size=10),legend.position="none",
+#     panel.grid.major = element_blank(),
+#     panel.grid.minor = element_blank(),
+#     axis.line = element_line(colour = "black"),
+#     axis.ticks = element_line(colour = "black"),legend.title=element_blank()
+#   ) 
+# ggsave("figs4_compare_to_sift_42226.pdf",device = "pdf")
+
 
 ggplot(screen_w_cadd,aes(x=new_score_gdna_avg,y=SIFTval)) + geom_point(aes(color = ClinVar), size = 4, alpha = 0.8) +
   scale_color_manual(values = mutation_colors) +
-  labs(x = "Screen Score", y = "SIFT Score", title = "") +  # Add title
+  labs(x = "Screen Score", y = "SIFT Score", title = "",caption="r=0.31; rho=-0.45") +  # Add title
   theme_minimal(base_size = 7.5) +
   #geom_smooth(method = "loess", formula = y ~ x, color = "blue", se = FALSE,size=0.5) +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
-    axis.title.x = element_text(size = 20, face = "bold", margin = margin(t = 10)),
-    axis.title.y = element_text(size = 20, face = "bold", margin = margin(r = 10)),
-    axis.text = element_text(size = 15,face="bold"), legend.text = element_text(size=10),legend.position="none",
+    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+    axis.title.x = element_text(size = 25, face = "bold", margin = margin(t = 10)),
+    axis.title.y = element_text(size = 25, face = "bold", margin = margin(r = 10)),
+    axis.text = element_text(size = 20,face="bold"), legend.text = element_text(size=15),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_line(colour = "black"),
-    axis.ticks = element_line(colour = "black"),legend.title=element_blank()
+    axis.ticks = element_line(colour = "black"),legend.title=element_blank(), legend.position = "none",
+    plot.caption = element_text(hjust = 0.5, size = 20, face = "italic", margin = margin(t = 10))
   ) 
-ggsave("figs4_compare_to_sift_42226.pdf",device = "pdf")
+ggsave("fig2a_compare_to_sift_81726.pdf",dev="pdf",width=5,height=5)
+ggsave("fig2a_compare_to_sift_81726.eps",dev="eps",width=5,height=5)
 
-ratios = read.csv("~/Downloads/count files/ratios_test_benign_32_mutations.csv")
-variants = ratios$aa_change
+
+
+#ratios = read.csv("~/Downloads/count files/ratios_test_benign_32_mutations.csv")
+ratios_upd = read.csv("ratios_32_mutations_filter_low_crispresso_9326.csv")
+
+variants = ratios_upd$aa_change
 #G247E and G247A did not have a working hdrt value so I will exclude them
+#K252R and G215E do not have data for every cell
+#G247G is excluded because pam change restoration. H236H is included because always defined as 1
 big_table_t= c()
 for (v in variants){
-  if (v %in% c("H236H","G247E","G247A","G247G")) {next}
-  subset = ratios[which(ratios$aa_change==v),-c(1,2,3)]
+  if (v %in% c("H236H","G247E","G247A","G247G","K252R","G215E")) {next}
+  subset = ratios_upd[which(ratios_upd$aa_change==v),-c(1,2,3)]
   values = c(subset$ratio_hdrt,
              mean(c(subset$ratio_day3_d1,subset$ratio_day3_d2),na.rm=T),
              mean(c(subset$ratio_day5_no_il2_d1,subset$ratio_day5_no_il2_d2),na.rm=T),
@@ -401,38 +447,67 @@ for (v in variants){
              mean(c(subset$ratio_day8_no_il2_d1,subset$ratio_day8_no_il2_d2),na.rm=T),
              mean(c(subset$ratio_day8_il2_d1,subset$ratio_day8_il2_d2),na.rm=T))
   values = values/values[1]
-  category = c("HDRT","Day 3","Day 5 IL2-","Day 5 IL2+","Day 8 IL2-","Day 8 IL2+")
+  category = c("HDRT Mix","Day 3","Day 5 IL2-","Day 5 IL2+","Day 8 IL2-","Day 8 IL2+")
   variant = rep(v,length(values)) 
   variant_out = data.frame(category,values,variant)
   big_table_t = rbind(big_table_t,variant_out)
 }
 
-big_table_t$category = factor(big_table_t$category,levels = c("HDRT","Day 3","Day 5 IL2-","Day 5 IL2+","Day 8 IL2-","Day 8 IL2+"))
+big_table_t$category = factor(big_table_t$category,levels = c("HDRT Mix","Day 3","Day 5 IL2-","Day 5 IL2+","Day 8 IL2-","Day 8 IL2+"))
+#big_table_t$variant = factor(big_table_t$variant,levels = rev(c("F227C","R222P","R226C","R222G","R226H","S225R","W237*",
+#                                                            "W237R","W237S","A234P","E239*","R226P","R224G",
+#                                                            "R224P","W246S","R226G","A234A","G215E","H245D",
+#                                                            "H245L","H245H","H245N","I244I","I244V","K252R","S233T","G247R","G232R")))
+
 big_table_t$variant = factor(big_table_t$variant,levels = rev(c("F227C","R222P","R226C","R222G","R226H","S225R","W237*",
-                                                            "W237R","W237S","A234P","E239*","R226P","R224G",
-                                                            "R224P","W246S","R226G","A234A","G215E","H245D",
-                                                            "H245L","H245H","H245N","I244I","I244V","K252R","S233T","G247R","G232R")))
+                                                                "W237R","W237S","A234P","E239*","R226P","R224G",
+                                                                "R224P","W246S","R226G","A234A","H245D",
+                                                                "H245L","H245H","H245N","I244I","I244V","S233T","G247R","G232R")))
+
+
+library(showtext)
+
+# 1. Load the Arial font into showtext
+# Note: Provide the specific path to Arial on your OS if it doesn't auto-resolve
+font_add("Arial", regular = "Arial.ttf") 
+
+# 2. Turn on showtext auto-rendering
+showtext_auto()
+
 ggplot(big_table_t, aes(x = category, y = variant, fill = values)) +
   geom_tile() + 
+  ##used this to x out missing variants
+  # geom_point(
+  #   data = big_table_t %>% filter(is.na(values)),
+  #   aes(x = category, y = variant),
+  #   inherit.aes = FALSE,
+  #   shape = 4,     # shape 4 = X, shape 13 = X in circle
+  #   size  = 6,
+  #   color = "grey40",
+  #   stroke = 2
+  # ) +
   #scale_fill_gradient(low = "white", high = "black") +  # Grayscale gradient
   scale_fill_gradientn(
     colors = c("white", "black"),  # White to black gradient
     values = c(0, 1.5),       # Define stops in data range
     limits = c(0, 1.5),            # Clamp values at 1.5
-    oob = scales::squish           # Anything above 1.5 stays black
+    oob = scales::squish,
+    breaks = seq(0, 1.5, by = 0.25),
+    #na.value = "grey90"          # light grey background for NA tiles
+    # Anything above 1.5 stays black
   ) +
-  
-  theme_minimal() +
+  theme_minimal(base_family = "Arial") +
   labs(title = "",
        x = "Condition",
        y = "Variant",
-       fill = "Ratio") +
+       fill = "Ratio\nVariant:H236H") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1,size=25,face="bold"),
         axis.text.y = element_text(angle = 45, hjust = 1,size=25,face="bold"),
         axis.title.x = element_text(size = 25,face="bold"),
         axis.title.y = element_text(size = 25,face="bold"),
-        legend.text=element_text(size=20,face="bold"),legend.title=element_text(size=20,face="bold"))
-ggsave("figures5_heatmap.pdf",dev="pdf",height=15,width=10)
+        legend.text=element_text(size=15,face="bold"),legend.title=element_text(size=17,face="bold"))
+ggsave("t_cell_heatmap_sep2026v2.pdf",dev="pdf",height=15,width=10)
+#ggsave("t_cell_comp_not_passed.pdf",dev="pdf",height=15,width=10)
 #ggsave("t_cell_differentiation_31025.eps",dev="eps",width=15)
 
 #og_annotation = read.xlsx("master_table_with_new_scores_and_classifications_after_excluding_11724.xlsx")
@@ -566,7 +641,12 @@ ggplot(data_69g_87g_combined, aes(x = Mutation.type, y = ScaledFoldChange_mean))
 
 ggsave("figures8_pcam02_42326.pdf",device = "pdf")
 
+hsc_validation_round2 = read.table("all_sequence_counts_21525.txt",header=T)
+hsc_validation_round1 = read.table("all_sequence_counts_10824.txt",header=T)
+hsc_validation_round0 = read.table("all_sequence_counts_9524.txt",header=T)
 
+hsc_validation_old_to_use = rbind(hsc_validation_round0[grep("HDRT",rownames(hsc_validation_round0)),],
+                                  hsc_validation_round1[grep("Wk3",rownames(hsc_validation_round1)),])
 
 hsc_validation_old_to_use_wk3 = rbind(hsc_validation_round0[grep("HDRT",rownames(hsc_validation_round0)),],
                                       hsc_validation_round1[grep("Wk3",rownames(hsc_validation_round1)),])
@@ -585,9 +665,9 @@ for (v in variants_round1) {
 
 
 
-big_table_wk3$category[which(big_table_wk3$category=="B")] = "CD19"
-big_table_wk3$category[which(big_table_wk3$category=="M")] = "CD33"
-big_table_wk3$category[which(big_table_wk3$category=="NK")] = "CD56"
+big_table_wk3$category[which(big_table_wk3$category=="B")] = "CD19+"
+big_table_wk3$category[which(big_table_wk3$category=="M")] = "CD33+"
+big_table_wk3$category[which(big_table_wk3$category=="NK")] = "CD56+"
 big_table_wk3$category[which(big_table_wk3$category=="DP")] = "CD5+/CD7+ T"
 big_table_wk3$category[which(big_table_wk3$category=="DN")] = "CD5-/CD7- T"
 
@@ -612,7 +692,7 @@ big_table_wk6$category[which(big_table_wk6$category=="DN")] = "CD4-/CD8- T"
 big_table_wk3_6 = rbind(big_table_wk3,big_table_wk6)
 
 big_table_wk3_6$category = factor(big_table_wk3_6$category,levels = c("HDRT","CD5-/CD7- T",
-                                                                      "CD5+/CD7+ T","CD4-/CD8- T","CD4+/CD8+ T","CD19","CD33","CD56"))
+                                                                      "CD5+/CD7+ T","CD4-/CD8- T","CD4+/CD8+ T","CD19+","CD33+","CD56+"))
 big_table_wk3_6$variant = factor(big_table_wk3_6$variant,levels = c("G232R","A234P",
                                                                     "A234A","S233T"))
 ggplot(big_table_wk3_6, aes(x = category, y = variant, fill = value)) +
@@ -621,21 +701,25 @@ ggplot(big_table_wk3_6, aes(x = category, y = variant, fill = value)) +
   scale_fill_gradientn(
     colors = c("white", "black"),  # White to black gradient
     values = c(0, 1.5),       # Define stops in data range
-    limits = c(0, 1.5),            # Clamp values at 1.5
+    limits = c(0, 1.5),
+    breaks = seq(0, 1.5, by = 0.25),# Clamp values at 1.5
     oob = scales::squish           # Anything above 1.5 stays black
   ) +
-  theme_minimal() +
+  theme_minimal(base_family = "Arial") +
   labs(title = "",
        x = "Cell Type",
        y = "Variant",
-       fill = "Ratio") +
+       fill = "Ratio\nVariant:H236H") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1,size=40,face="bold"),
         axis.text.y = element_text(angle = 45, hjust = 1,size=40,face="bold"),
         axis.title.x = element_text(size = 25,face="bold"),
         axis.title.y = element_text(size = 25,face="bold"),
-        legend.text=element_text(size=20,face="bold"),legend.title=element_text(size=20,face="bold"))
+        legend.text=element_text(size=15,face="bold"),legend.title=element_text(size=17,face="bold"))
 
-ggsave("figures9_heatmap.pdf",dev="pdf",height=10,width=10)
+#ggsave("figures9_heatmap.pdf",dev="pdf",height=10,width=10)
+ggsave("heatmap_hsc_four_variants_sep2026.pdf",dev="pdf",height=10,width=10)
+
+
 
 conservation_data = read.csv("data_5g_13g_combined_with_cons.csv")
 conservation_data$Mutcode1 = paste0(str_sub(conservation_data$Mutcode2, 1, 6),str_sub(conservation_data$Mutcode2, -3, -1))
